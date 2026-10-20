@@ -1,0 +1,44 @@
+# ============================================================
+# AI Crop Disease Detector — ML training dependencies
+#
+# These are needed ONLY for training/evaluation work and are
+# intended to run on Kaggle/Colab (free GPU). Local training on
+# a CPU laptop also works but is slow.
+#
+# NOTE: install this file inside a virtual environment, NOT into
+# your global Python. Example:
+#   python -m venv ml/.venv
+#   ml/.venv/Scripts/pip install -r ml/requirements.txt   (Windows)
+#   source ml/.venv/bin/activate && pip install -r ml/requirements.txt  (Linux)
+#
+# Dataset download / web access is handled separately.
+# ============================================================
+
+# --- Core numerics / data handling ---
+numpy>=1.26
+pandas>=2.0
+Pillow>=10.0
+scipy>=1.11
+
+# --- Plotting (class distribution, confusion matrix) ---
+matplotlib>=3.8
+
+# --- Dataset splitting ---
+scikit-learn>=1.3
+
+# --- Training framework ---
+# The codebase (ml/src/*.py) uses TensorFlow/Keras APIs because the
+# capture-from-device notebook environment on Kaggle offers a GPU and
+# Keras provides MobileNetV2 weights out of the box.
+tensorflow>=2.15
+# Alternative: PyTorch + efficientnet-b0 could be used instead; the
+# export path below does not depend on which framework you trained with
+# as long as you export via keras2onnx/scripted graph or torch.onnx.
+
+# --- ONNX export + validation ---
+onnx>=1.15
+onnxruntime>=1.16
+tf2onnx>=1.16
+
+# --- Notebook helpers (for Kaggle/Colab) ---
+tqdm>=4.66
