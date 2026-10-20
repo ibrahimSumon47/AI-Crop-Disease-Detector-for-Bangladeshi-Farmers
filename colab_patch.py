@@ -1,14 +1,14 @@
 """
-colab_fix_files.py — Colab সেশনে ঠিক করা ml/src ফাইলগুলো বসিয়ে দেয়।
+colab_patch.py — Colab-এ ঠিক করা ml/src কোড বসানোর এক ফাইলের প্যাচ।
 
-কেন দরকার: GitHub-এ এখনো পুরোনো (buggy) কোড আছে, তাই নতুন Colab সেশনে
-`1a` (git clone) করলে পুরোনো ফাইলই আসে। এই স্ক্রিপ্ট রিপো ফোল্ডারে গিয়ে
-৪টা ফাইল ঠিক করা ভার্সন দিয়ে বদলে দেয় — Colab সেশন বা ডেটা মুছবে না।
+কেন: GitHub-এ এখনো পুরোনো (ভাঙা) কোড আছে, তাই `git clone` করলে ভাঙা
+কোডই আসে। এই স্ক্রিপ্ট সেই ফোল্ডারে গিয়ে ৫টা ফাইল ঠিক করা ভার্সন দিয়ে
+বদলায় — Colab সেশন বা ডাউনলোড করা ডেটা মুছবে না।
 
-চালানোর নিয়ম (Colab-এ):
+Colab-এ চালানোর নিয়ম (২ ধাপ):
     from google.colab import files
-    files.upload()            # এই ফাইলটা বেছে নিন
-    !python colab_fix_files.py
+    files.upload()               # এই ফাইলটা বেছে নিন
+    !python colab_patch.py       # এটাই মূল কাজ করবে
 """
 
 import base64
@@ -18,7 +18,7 @@ import tempfile
 import zlib
 from pathlib import Path
 
-REPO_DIR_NAME = "AI-Crop-Disease-Detector-for-Bangladeshi-Farmers"
+FOLDER_HINTS = ["AI-Crop-Disease-Detector-for-Bangladeshi-Farmers"]
 
 _PAYLOAD = {
     'augmentations.py': (
@@ -263,32 +263,72 @@ _PAYLOAD = {
         'V2UtIY9+ARJ/s79PLGKVYuqcQ5VdiLTyit5bGpOm9rcZqegXIIJVo3Lp+o6qZCIYwDwReyqKxGQi'
         'vCiiFBRF3thhg/LR4P+GRbRI'
     ),
+    'model.py': (
+        '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'
+        'L1Z2Fok='
+    ),
 }
 
-# প্রতিটা ফাইলে থাকা বাধ্যতামূলক (এবং নিষিদ্ধ) লেখা — যাচাইয়ের জন্য।
 REQUIRED = {
-    "augmentations.py": ["tf.raw_ops.ImageProjectiveTransformV3", "tf.image.crop_to_bounding_box"],
-    "classes.py": ["CLASSES", "def validate"],
-    "train.py": ["class_order.json", "build_model(len(class_names))"],
-    "export_onnx.py": ["class_order.json"],
+    'augmentations.py': ['tf.raw_ops.ImageProjectiveTransformV3', 'tf.image.crop_to_bounding_box'],
+    'classes.py': ['CLASSES', 'def validate'],
+    'train.py': ['class_order.json', 'build_model(len(class_names))'],
+    'export_onnx.py': ['class_order.json'],
+    'model.py': ['Dense(n_classes'],
 }
+
 FORBIDDEN = {
-    "augmentations.py": ["tf.keras.layers.Random", "keras.layers.GaussianBlur"],
+    'augmentations.py': ['tf.keras.layers.Random', 'keras.layers.GaussianBlur'],
+    'train.py': ['FATAL: dataset folder order differs'],
 }
 
 
 def find_repo() -> Path:
-    """রিপো ফোল্ডার খুঁজে বের করা — নাম বদলালেও (…-1, …-2) কাজ করবে।"""
+    """রিপো ফোল্ডার খুঁজি — নামের শেষে -1, -2 থাকলেও ধরবে।"""
     roots = [Path("/content"), Path.cwd()]
-    candidates: list[Path] = []
+    candidates = []
     for root in roots:
-        candidates.append(root / REPO_DIR_NAME)
+        for hint in FOLDER_HINTS:
+            candidates.append(root / hint)
         if root.is_dir():
-            # Colab কখনো ফোল্ডারের নাম বদলায় -> ভিতরের সব ফোল্ডারও দেখি
             candidates += sorted(p.parents[2] for p in root.glob("*/ml/src/train.py"))
-    for root in roots:
-        candidates.append(root)
-        candidates.append(root.parent)
+        candidates += [root, root.parent]
     for c in candidates:
         try:
             if (c / "ml" / "src" / "train.py").is_file():
@@ -296,15 +336,14 @@ def find_repo() -> Path:
         except OSError:
             continue
     raise SystemExit(
-        "[fix] রিপো ফোল্ডার পাওয়া যায়নি। আগে cell 1a (git clone) রান করুন, "
-        "তারপর আবার এই স্ক্রিপ্ট চালান।"
+        "[patch] রিপো ফোল্ডার পাওয়া যায়নি। আগে cell 1a (git clone) রান করুন।"
     )
 
 
 def main() -> int:
     repo = find_repo()
     src = repo / "ml" / "src"
-    print(f"[fix] repo      : {repo}")
+    print(f"[patch] repo : {repo}")
 
     written = []
     for name, blob in _PAYLOAD.items():
@@ -313,35 +352,32 @@ def main() -> int:
         target.write_text(text, encoding="utf-8")
         written.append((name, target, text))
 
-    print("[fix] ফাইল লেখা হয়েছে:")
+    print("[patch] ফাইল লেখা হয়েছে:")
     for name, target, text in written:
-        print(f"      {name:<18} {len(text.splitlines()):>4} lines  {target}")
+        print(f"        {name:<18} {len(text.splitlines()):>4} lines")
 
-    # ১) syntax ঠিক আছে কি না
     problems = []
     for name, target, _ in written:
         try:
             py_compile.compile(str(target), doraise=True, cfile=tempfile.mktemp())
         except py_compile.PyCompileError as exc:
             problems.append(f"{name}: syntax error -> {exc.msg}")
-
-    # ২) পুরোনো buggy কোড সত্যিই চলে গেছে কি না
     for name, _, text in written:
         for needle in REQUIRED.get(name, []):
             if needle not in text:
-                problems.append(f"{name}: প্রত্যাশিত কোড নেই -> {needle!r}")
+                problems.append(f"{name}: expected code missing -> {needle!r}")
         for needle in FORBIDDEN.get(name, []):
             if needle in text:
-                problems.append(f"{name}: পুরোনো buggy কোড এখনো আছে -> {needle!r}")
+                problems.append(f"{name}: old buggy code still present -> {needle!r}")
 
     if problems:
-        print("\n[fix] ❌ যাচাই ব্যর্থ:")
+        print("\n[patch] যাচাই ব্যর্থ:")
         for p in problems:
-            print("      -", p)
+            print("        -", p)
         return 1
 
-    print("\n[fix] ✅ সব ঠিক আছে — ৪টা ফাইল বদলানো ও যাচাই সম্পন্ন।")
-    print("[fix] এখন cell 4a (training) আবার রান করুন।")
+    print("\n[patch] সব ঠিক আছে — ৫টা ফাইল বদলানো ও যাচাই সম্পন্ন।")
+    print("[patch] এখন cell 4a (training) আবার রান করুন।")
     return 0
 
 
