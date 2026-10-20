@@ -1,0 +1,106 @@
+import glob, pathlib, py_compile, base64, zlib, hashlib
+
+candidates = []
+for root in [pathlib.Path("/content"), pathlib.Path.cwd(), pathlib.Path.cwd().parent]:
+    candidates += sorted(glob.glob(str(root / "*AI-Crop-Disease-Detector*/ml/src")))
+    if (root / "ml" / "src" / "train.py").is_file():
+        candidates.append(str(root / "ml" / "src"))
+assert candidates, "রিপো ফোল্ডার পাওয়া যায়নি — Colab-এ cell 1a (git clone) রান হয়েছে তো?"
+SRC = pathlib.Path(candidates[0])
+print("লিখছি ফোল্ডারে:", SRC)
+
+# ---- ঠিক করা train.py (base64+zlib এমবেড) ----
+EMBEDDED = {
+    "train.py": (
+        "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"
+    ),
+}
+
+b64 = EMBEDDED["train.py"]
+
+# কপি-পেস্টে কোনো অক্ষর বদলে গেলে আগেই ধরি — রহস্যময় zlib error-এর বদলে স্পষ্ট বার্তা
+recv_digest = hashlib.sha256(b64.encode()).hexdigest()[:16]
+if recv_digest != "0cb5254fc8d65432":
+    raise SystemExit(
+        "কপি-পেস্টে ডেটা কিছুটা ভেঙেছে (অক্ষর বদলে গেছে)।\n"
+        "এই কোডটা বড়, তাই কপি করার সময় একটু পেস্ট মিস হয়ে থাকতে পারে।\n"
+        "সমাধান: উপরে থেকে অত্যন্ত খেয়াল করে পুরোপুরি নতুন করে কপি করে\n"
+        "ঠিক এই cell-এ আবার পেস্ট করে চালান। (প্রত্যাশিত কোড " + "0cb5254fc8d65432" + ", পেয়েছি " + recv_digest + ")"
+    )
+print("ডেটা-যাচাই ঠিক আছে (sha256 check passed)")
+
+data = zlib.decompress(base64.b64decode(b64))
+new_text = data.decode("utf-8")
+(SRC / "train.py").write_text(new_text, encoding="utf-8")
+print(f"বদলানো হলো: ml/src/train.py ({len(new_text.splitlines())} lines)")
+
+py_compile.compile(str(SRC / "train.py"), doraise=True)
+
+t = (SRC / "train.py").read_text(encoding="utf-8")
+assert "FATAL: dataset folder order" not in t, "পুরোনো guard এখনো আছে!"
+assert "class_order.json" in t
+assert "build_model(len(class_names))" in t
+assert "keras.layers.Random" not in t
+
+print("DONE — train.py ঠিক করা মারা গেছে। এখন cell 4a আবার চালান।")
