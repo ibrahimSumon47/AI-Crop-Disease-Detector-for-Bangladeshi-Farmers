@@ -91,16 +91,24 @@ def random_color_jitter(image: tf.Tensor) -> tf.Tensor:
 
 
 def maybe_blur(image: tf.Tensor) -> tf.Tensor:
-    """With probability BLUR_PROBABILITY apply a tiny 3x3 blur (camera shake)."""
+    """With probability BLUR_PROBABILITY apply a tiny 3x3 box blur (camera shake).
+
+    Uses depthwise_conv2d with channel_multiplier=1 so the filter has shape
+    [3,3,in_channels,1]. The earlier variant used [3,3,1,1], which made
+    depthwise_conv2d expect 1 input channel and failed on our 3-channel RGB
+    input (the only real training crash we had during the Colab run)."""
     def _blur() -> tf.Tensor:
-        # A normalized 3x3 kernel adds mild softness.
-        kernel = tf.constant(
+        # 3x3 box kernel, fairly light so pathology stays readable.
+        kernel_2d = tf.constant(
             [[1.0, 2.0, 1.0],
              [2.0, 4.0, 2.0],
              [1.0, 2.0, 1.0]], dtype=tf.float32) / 16.0
-        kernel = tf.reshape(kernel, [3, 3, 1, 1])
+        # depthwise_conv2d filter shape: [kH, kW, in_channels, channel_multiplier].
+        # We want in_channels=3 (RGB) and multiplier=1 -> [3,3,3,1].
+        kernel = tf.tile(tf.reshape(kernel_2d, [3, 3, 1, 1]), [1, 1, 3, 1])
         image_f = tf.expand_dims(image, axis=0)
-        blurred = tf.nn.depthwise_conv2d(image_f, kernel, strides=[1, 1, 1, 1], padding="SAME")
+        blurred = tf.nn.depthwise_conv2d(
+            image_f, kernel, strides=[1, 1, 1, 1], padding="SAME")
         return tf.squeeze(blurred, axis=0)
 
     should_blur = tf.random.uniform([], 0.0, 1.0) < BLUR_PROBABILITY
