@@ -107,6 +107,43 @@ BN_NAMES: dict[str, str] = {
 }
 
 
+def missing_from_dataset(folders: list[str]) -> list[str]:
+    """Validate a dataset's class folders against the canonical class list.
+
+    IMPORTANT — what the model's label order actually is:
+        Keras (`image_dataset_from_directory`) builds its label index from the
+        ALPHABETICAL order of the folder names, so the trained model's output
+        order is the DATASET order, not this file's order (this file groups by
+        crop: rice, potato, tomato). train.py therefore records the real order
+        in ml/reports/class_order.json and export_onnx.py replays that exact
+        order when it writes labels.json. This function only guards the SET of
+        names, which is what actually protects us from silent label swaps.
+
+    Args:
+        folders: class folder names found in data/processed/train.
+
+    Returns:
+        Canonical classes the dataset does NOT contain. We train on what the
+        data actually has (subset support) and report the rest, instead of
+        crashing — e.g. the public rice dataset we downloaded has blast,
+        brown spot and healthy, but no bacterial leaf blight / tungro images.
+
+    Raises:
+        SystemExit: when a folder is not a known class. That means the data
+        preparation step produced a typo'd folder name, which would otherwise
+        turn into an unknown 12th output index.
+    """
+    unknown = sorted({f for f in folders if f not in LABEL_TO_INDEX})
+    if unknown:
+        raise SystemExit(
+            "ERROR: unknown dataset class folder(s): "
+            f"{unknown}\nKnown classes: {sorted(CLASSES)}\n"
+            "Fix prepare_data.py aliases or rename the folders."
+        )
+    present = set(folders)
+    return [c for c in CLASSES if c not in present]
+
+
 def validate() -> None:
     """Self-check called by other scripts: all mappings must be consistent."""
     assert len(set(CLASSES)) == N_CLASSES, "duplicate class names!"

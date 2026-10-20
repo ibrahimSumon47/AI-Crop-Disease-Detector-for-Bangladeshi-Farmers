@@ -27,9 +27,10 @@ import json
 from pathlib import Path
 
 import numpy as np
+import tensorflow as tf  # module level: make_callbacks() needs it at call time
 
 from augmentations import build_datasets
-from classes import CLASSES
+from classes import missing_from_dataset
 from model import STAGE1_LR, STAGE2_LR, build_model, unfreeze_for_finetune
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -42,21 +43,34 @@ PATIENCE_HEAD = 3               # stop head training quickly if no progress
 PATIENCE_FT = 5                 # fine-tuning is slower; allow more patience
 
 
-def compute_class_weights(train_dir: Path) -> dict[int, float]:
+def compute_class_weights(class_names: list[str], train_dir: Path) -> dict[int, float]:
     """Compute class weights from the number of images per class folder.
 
     Formula: n_samples / (n_classes * n_class_samples) — the sklearn
     'balanced' convention. Keeps rare classes (rice diseases) from being
-    drowned out by tomato's 18k images.
+    drowned out by tomato's ~18k images.
+
+    Args:
+        class_names: the model's real output order (the Keras folder order),
+            NOT classes.py order — otherwise the weight for index 0 would be
+            applied to the wrong class and quietly bias the model.
+        train_dir: processed training split, one sub-folder per class.
+
+    Returns:
+        {output_index: weight} ready to pass to `model.fit(class_weight=...)`.
     """
     counts: list[int] = []
-    for class_name in CLASSES:
+    for class_name in class_names:
         class_dir = train_dir / class_name
-        n = sum(1 for p in class_dir.glob("*") if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"})
+        n = sum(
+            1
+            for p in class_dir.glob("*")
+            if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
+        )
         counts.append(n)
 
     total = sum(counts)
-    n_classes = len(CLASSES)
+    n_classes = len(class_names)
     # Avoid exactly-uniform weights when data is perfectly balanced.
     weights = {
         i: (total / (n_classes * count)) if count > 0 else 1.0
@@ -108,30 +122,53 @@ def main() -> None:
     parser.add_argument("--batch", type=int, default=32)
     args = parser.parse_args()
 
-    import tensorflow as tf  # imported here so --help is instant without TF
-
     args.report_dir.mkdir(parents=True, exist_ok=True)
 
     # ---- 1. Data ----------------------------------------------------------
     train_ds, val_ds, class_names = build_datasets(
         str(args.train), str(args.val), batch_size=args.batch, seed=42
     )
-    # Safty check: folder order must equal classes.py order.
-    if class_names != CLASSES:
-        raise SystemExit(
-            "FATAL: dataset folder order differs from classes.py order!\n"
-            f"  folders: {class_names}\n  canonical: {CLASSES}\n"
-            "Re-run prepare_data.py / rename folders — a mismatch would\n"
-            "scramble the labels in an uncatchable way."
+    # ---- 1b. Label sanity check -----------------------------------------
+    # Keras labels the classes in ALPHABETICAL FOLDER order, and the trained
+    # model's output index follows that order. classes.py groups by crop, so
+    # the two orders legitimately differ. What must NOT happen is a folder
+    # that is not a known class (silent extra label) or a labels.json written
+    # in a different order than training used.
+    #   -> we verify the folder SET here, and record the exact order that
+    #      training used in ml/reports/class_order.json so export_onnx.py can
+    #      replay it when it writes backend/app/data/labels.json.
+    missing = missing_from_dataset(class_names)
+    if missing:
+        print(
+            "[train] NOTE: the dataset has no images for "
+            f"{len(missing)} canonical class(es): {missing}\n"
+            f"[train] Training will cover {len(class_names)} classes only. "
+            "Add data for the missing ones later and re-run prepare_data.py."
         )
+    class_order_path = args.report_dir / "class_order.json"
+    class_order_path.write_text(
+        json.dumps(
+            {
+                "class_names": class_names,
+                "n_classes": len(class_names),
+                "source": "Keras image_dataset_from_directory (alphabetical folder order)",
+                "note": "The model's output index IS this list order. export_onnx.py reads this file.",
+            },
+            indent=2,
+        )
+    )
+    print(f"[train] label order ({len(class_names)} classes) saved to {class_order_path}")
 
-    class_weights = compute_class_weights(args.train)
+    class_weights = compute_class_weights(class_names, args.train)
     print("[train] class weights (top/low):",
           sorted(class_weights.items(), key=lambda kv: -kv[1])[:3],
           "...", sorted(class_weights.items(), key=lambda kv: kv[1])[:3])
 
     # ---- 2. Stage 1: train the frozen model -------------------------------
-    model = build_model()
+    # Output width MUST match the number of classes the dataset actually has,
+    # otherwise the head produces dead logits for missing classes and softmax
+    # probabilities are spread over labels the model can never learn.
+    model = build_model(len(class_names))
     print("[train] STAGE 1 — head training (backbone frozen)")
     h1 = model.fit(
         train_ds,
@@ -156,7 +193,7 @@ def main() -> None:
     merged = merge_histories(h1, h2)
     best_val_acc = max(merged.get("val_accuracy", [0.0]))
     history_payload = {
-        "class_names": CLASSES,
+        "class_names": class_names,   # real order used by the trained model
         "class_weights": class_weights,
         "stage1_epochs_run": len(h1.history["loss"]),
         "stage2_epochs_run": len(h2.history["loss"]),
