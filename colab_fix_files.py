@@ -278,16 +278,26 @@ FORBIDDEN = {
 
 
 def find_repo() -> Path:
-    candidates = [
-        Path("/content") / REPO_DIR_NAME,
-        Path.cwd(),
-        Path.cwd().parent,
-    ]
+    """রিপো ফোল্ডার খুঁজে বের করা — নাম বদলালেও (…-1, …-2) কাজ করবে।"""
+    roots = [Path("/content"), Path.cwd()]
+    candidates: list[Path] = []
+    for root in roots:
+        candidates.append(root / REPO_DIR_NAME)
+        if root.is_dir():
+            # Colab কখনো ফোল্ডারের নাম বদলায় -> ভিতরের সব ফোল্ডারও দেখি
+            candidates += sorted(p.parents[2] for p in root.glob("*/ml/src/train.py"))
+    for root in roots:
+        candidates.append(root)
+        candidates.append(root.parent)
     for c in candidates:
-        if (c / "ml" / "src" / "train.py").is_file():
-            return c.resolve()
+        try:
+            if (c / "ml" / "src" / "train.py").is_file():
+                return c.resolve()
+        except OSError:
+            continue
     raise SystemExit(
-        "[fix] রিপো ফোল্ডার পাওয়া যায়নি। আগে cell 1a (git clone) রান করুন।"
+        "[fix] রিপো ফোল্ডার পাওয়া যায়নি। আগে cell 1a (git clone) রান করুন, "
+        "তারপর আবার এই স্ক্রিপ্ট চালান।"
     )
 
 
