@@ -4,34 +4,97 @@
 
 A farmer uploads (or captures) a photo of a plant leaf using a $100 Android phone. The app
 detects the crop and the most likely disease, shows a confidence score with top-3
-alternatives, and gives **treatment advice written in simple Bangla**. If the model is not
-confident, it honestly says *"আমি নিশ্চিত নই — কৃষি কর্মকর্তার সাথে পরামর্শ করুন"* instead of
-guessing, because a wrong pesticide recommendation can destroy a farmer's season.
+alternatives, and gives **treatment advice written in simple Bangla**. When the model is
+not confident, it says so honestly, still shows its best guess's advice labeled
+low-confidence, and recommends consulting the local agriculture officer — because a wrong
+pesticide recommendation can destroy a farmer's season.
 
-![Status: In Progress](https://img.shields.io/badge/status-in%20progress-yellow)
-![Crops](https://img.shields.io/badge/crops-rice%20%7C%20potato%20%7C%20tomato-green)
-![License: MIT](https://img.shields.io/badge/license-MIT-blue)
+🌐 **Live app:** https://ai-crop-disease-detector-for-bangla-three.vercel.app
+
+| Home (upload) | Uncertain result (honest fallback with advice) |
+| --- | --- |
+| ![Home screenshot](docs/screenshots/live-home.png) | ![Result screenshot](docs/screenshots/live-uncertain-result.png) |
 
 > ## 🇧🇩 কৃষকদের জন্য, বাংলায়
 > এই অ্যাপটি পাতার ছবি দেখে ধান, আলু ও টম্যাটোর রোগ শনাক্ত করে এবং সহজ বাংলায় চিকিৎসা
-> পরামর্শ দেয়। নিশ্চিত না হলে অ্যাপটি অনুমান করে না — স্পষ্টভাবে বলে যে কৃষি কর্মকর্তার
-> পরামর্শ নেওয়া উচিত।
+> পরামর্শ দেয়। নিশ্চিত না হলে অ্যাপ সবচেয়ে সম্ভাব্য রোগের পরামর্শ "কম আস্থায়" লেবেলসহ দেখায়
+> এবং কৃষি কর্মকর্তার পরামর্শ নেওয়ার জন্যও বলে।
+
+[![Status: Working MVP](https://img.shields.io/badge/status-working%20MVP-brightgreen)](https://ai-crop-disease-detector-for-bangla-three.vercel.app)
+![Crops](https://img.shields.io/badge/crops-rice%20%7C%20potato%20%7C%20tomato-green)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
-## ✨ Planned Features
+## ✨ Features
 
 | Feature | Description |
 | --- | --- |
-| 📷 **Scan a leaf** | Upload or capture a photo (`capture="environment"` for the back camera), with drag-and-drop on desktop |
-| 🧠 **AI diagnosis** | Crop + disease prediction from ~10 disease classes (+ "healthy" per crop) for rice, potato, tomato |
-| 📊 **Confidence + top-3** | Confidence bar and three alternatives, so the farmer sees the whole picture |
-| 🟢 / 🟡 **Honest uncertainty** | Below the calibrated confidence threshold, the app refuses to guess and advises consulting an agriculture officer |
+| 📷 **Scan a leaf** | Capture with the phone camera (`capture="environment"`) or pick a file |
+| 🧠 **AI diagnosis** | Crop + disease prediction across 11 classes for rice, potato, tomato |
+| 📊 **Confidence + top-3** | Confidence % and three alternatives, so the farmer sees the whole picture |
+| 🟡 **Honest uncertainty** | Below the calibrated threshold: best guess's advice shown labeled low-confidence + officer recommendation |
 | 💊 **Bangla treatment advice** | Curated guideline per disease: symptoms, treatment, organic option, prevention, "when to call an expert" |
-| 🗂 **Scan history** | Past scans saved in SQLite with results, list + detail + delete |
-| 🌐 **Bangla-first UI** | Default Bangla interface with an optional English toggle |
+| 🗂 **Scan history** | Past scans saved; `/history` page (backend SQLite) |
+| 📱 **Installable (PWA)** | "Add to Home Screen" on Android/Chrome → runs like a native app |
+| 🌐 **Bangla-first UI** | Full Bangla interface, Noto Sans Bengali, designed for farmers |
 
-**Supported crops:** rice (ধান), potato (আলু), tomato (টম্যাটো)
+**Supported classes (11):**
+rice (blast, brown spot, healthy) · potato (early blight, late blight, healthy) ·
+tomato (bacterial spot, early blight, late blight, leaf mold, healthy)
+
+---
+
+## 📊 Model & Data (real, measured — nothing fabricated)
+
+### Model
+
+| | |
+| --- | --- |
+| Architecture | **MobileNetV2** (ImageNet weights) + new classification head |
+| Training | Transfer learning, two stages: head-only (lr 1e-3) then fine-tune top layers (lr 1e-5) |
+| Epochs | 5 head + 20 fine-tune with early stopping (best checkpoint kept) |
+| Class imbalance | Class-weighted loss |
+| Export | Keras → **ONNX** with a numerical parity check (Keras vs onnxruntime outputs must match) |
+| Size | 8.97 MB — deployed to Vercel serverless |
+| Serving | ONNX Runtime (CPU-only), same preprocessing as training: resize 224×224, normalize to [-1, +1] |
+
+### Measured performance (test split — 5,220 images, never-seen during training)
+
+| Metric | Value |
+| --- | --- |
+| Top-1 accuracy | **61.34%** |
+| Macro F1 | 0.526 |
+| Calibrated threshold | 0.97 (precision 93.6% @ 9.9% coverage on validation) |
+
+Strong classes: tomato_bacterial_spot (F1 0.79), tomato_healthy (0.74), potato_early_blight (0.72).
+Weak: tomato_early_blight recall (0.20), potato_late_blight (0.46), rice classes (lab-vs-field gap).
+**Full per-class table:** [ml/reports/metrics.md](ml/reports/metrics.md) · confusion matrix:
+[ml/reports/confusion_matrix.png](ml/reports/confusion_matrix.png)
+
+> ⚠️ **Known limitation (measured, honest):** the model was trained on clean lab datasets,
+> so on real field/phone photos it is often right at the top but with low confidence
+> (e.g., a potato early-blight leaf ranked #1 at 14%). The app handles this honestly
+> (low-confidence advice + officer recommendation). The fix is retraining with real
+> field photos — the pipeline is ready (`ml/src/download_data.md` → "Adding MORE data").
+
+### Data sources
+
+| Dataset | Used for | Source | License |
+| --- | --- | --- | --- |
+| **PlantVillage** (extended) | potato + tomato classes (~24k images) | Kaggle: `abdallahalidev/plantvillage-dataset` | CC BY-SA (research use) |
+| **Rice leaf disease** | rice blast / brown spot / healthy | Kaggle rice-leaf-diseases style collection | research use |
+| **PlantDoc** | reference for class naming / field variety | GitHub: SpoolTeam/PlantDoc (via [download_data.md](ml/src/download_data.md)) | MIT (code) / dataset research |
+
+Merged into a stratified 70/15/15 train/val/test split (seed 42) by
+[ml/src/prepare_data.py](ml/src/prepare_data.py); per-class counts:
+[ml/reports/class_distribution.png](ml/reports/class_distribution.png).
+Note: **rice_bacterial_leaf_blight and rice_tungro had no images in this run** — the
+model shipped with 11 classes; adding them is documented in the same file.
+
+Training was run on **Google Colab free T4 GPU**; the notebook
+[ml/notebooks/train_kaggle.ipynb](ml/notebooks/train_kaggle.ipynb) reproduces the whole
+pipeline (data → train → evaluate → calibrate → export ONNX).
 
 ---
 
@@ -39,26 +102,27 @@ guessing, because a wrong pesticide recommendation can destroy a farmer's season
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | Next.js (App Router, TypeScript) + Tailwind CSS, Noto Sans Bengali font |
-| Backend | FastAPI (Python), SQLite via SQLAlchemy, ONNX Runtime for inference |
-| ML | Transfer learning — MobileNetV2 / EfficientNet-B0 (ImageNet pre-trained), TensorFlow/Keras or PyTorch, exported to ONNX |
-| Advice pipeline | Curated Bangla guideline JSON (static, expert-reviewed) + optional LLM layer that only rewrites/extends from that JSON — never invents doses or products |
-| Hosting (free tier) | Vercel (frontend) + Hugging Face Spaces (Docker) or Render (backend + model) |
-| CI | GitHub Actions (backend tests + frontend lint/build) |
+| Frontend | Next.js 15 (App Router, TypeScript) + Tailwind CSS 4, Noto Sans Bengali, PWA manifest |
+| Backend | FastAPI (Python), SQLite via SQLAlchemy, ONNX Runtime inference |
+| Deployment | **Single Vercel project** — Next.js service + Python serverless function (`api/index.py` mounts the backend under `/api/*`), shared origin, no CORS needed |
+| ML | TensorFlow/Keras (MobileNetV2) → ONNX → onnxruntime |
+| Advice pipeline | Curated Bangla guideline JSON (static, expert-curated) + optional grounded LLM rewrite layer (off by default; only ever rephrases the curated JSON) |
+| CI | GitHub Actions ([backend-ci.yml](.github/workflows/backend-ci.yml) — 10 pytest tests on every push) |
 
 ---
 
 ## 🧭 How it works (request flow)
 
 ```
-photo upload → FastAPI /predict → validate & preprocess image
-→ ONNX model inference (softmax) → confidence threshold check
-   ├─ confident → guideline lookup → (optional LLM rewrite) → return diagnosis + advice
-   └─ not confident → "পরামর্শ করুন কৃষি কর্মকর্তার সাথে" → return is_uncertain=true
-→ save scan metadata to SQLite → JSON response
+photo upload → validate & preprocess (224×224, [-1,+1], EXIF-safe)
+→ ONNX inference (softmax) → calibrated threshold (0.97)
+   ├─ confident → guideline lookup → diagnosis + Bangla advice
+   └─ low confidence → best-guess advice labeled low-confidence
+                       + "consult the agriculture officer" → is_uncertain=true
+→ save scan (SQLite) → JSON response
 ```
 
-Full details: [docs/architecture.md](docs/architecture.md)
+Full details: [docs/architecture.md](docs/architecture.md) · API contract: `backend/app/schemas.py`
 
 ---
 
@@ -66,68 +130,108 @@ Full details: [docs/architecture.md](docs/architecture.md)
 
 ```
 .
-├── frontend/            # Next.js app (Bangla-first UI)
-├── backend/             # FastAPI app
-│   ├── app/
-│   │   ├── main.py config.py db.py models.py schemas.py
-│   │   ├── routers/     # /predict, /history
-│   │   ├── services/    # preprocess, ONNX inference, advice
-│   │   └── data/        # model.onnx, labels.json, guidelines_bn.json
-│   └── tests/
+├── frontend/            # Next.js app (Bangla-first UI, PWA)
+├── backend/             # FastAPI app (routers, services, data)
+│   └── app/data/        # model.onnx (9 MB), labels.json, guidelines_bn.json
+├── api/                 # Vercel serverless entrypoint (mounts backend under /api/*)
 ├── ml/
-│   ├── notebooks/       # Kaggle/Colab training notebook (free GPU)
-│   ├── src/             # data prep, train, evaluate, calibrate, export
-│   └── reports/         # metrics, confusion matrix, threshold, history
-├── docs/                # architecture, deployment, model card, screenshots
-└── .github/workflows/   # CI
+│   ├── notebooks/       # Colab/Kaggle training notebook (free GPU)
+│   ├── src/             # download/prepare/augment/train/evaluate/calibrate/export
+│   └── reports/         # REAL metrics: metrics.md, confusion matrix, threshold, history
+├── docs/                # architecture, deploy guide, screenshots
+└── .github/workflows/   # CI (backend pytest)
 ```
 
 ---
 
-## 🚧 Project Roadmap
+## 🚀 Deployment
 
-- [x] **Phase 1** — Repository setup
-- [ ] **Phase 2** — Data + ML (PlantVillage/PlantDoc + rice dataset; MobileNetV2 transfer learning; trained on Colab; ONNX export with parity check) — ✅
-- [ ] **Phase 3** — Backend (FastAPI, ONNX inference, calibrated threshold 0.97, Bangla guidelines, /predict + /history, 10 passing tests) — ✅
-- [ ] **Phase 4** — Frontend (Next.js 15 + Tailwind 4, Bangla-first UI, upload, result card, honest-uncertain screen, scan history) — ✅
-- [ ] **Phase 5** — Integration + QA (docker-compose, field test with real phone photos)
-- [ ] **Phase 6** — Deployment (HF Spaces/Render + Vercel)
-- [ ] **Phase 7** — Documentation, model card, release v1.0.0
+Deployed on **one free Vercel project** (frontend + backend + model together):
+
+1. Import the repo at Vercel → configuration lives in [vercel.json](vercel.json)
+   (Vercel *Services* mode: `web` service = `frontend/`, `api` service = Python function).
+2. Environment variables: `NEXT_PUBLIC_BACKEND_URL=/api`, `DATABASE_URL=sqlite:////tmp/scans.db`,
+   `MAX_UPLOAD_MB=4`, `CONFIDENCE_THRESHOLD=0.97`.
+3. Step-by-step (including the Render/HF Spaces alternative backend):
+   **[docs/deploy.md](docs/deploy.md)**.
+
+**Free-tier honesty:** serverless cold starts after ~15 min idle (first scan is slower);
+scan history uses `/tmp` SQLite and resets on redeploys; uploads capped at 4 MB.
 
 ---
 
-## 🚀 Deployment (free tiers)
+## 📱 Install as an app (Android / iOS / Desktop)
 
-| Piece | Host | Notes |
-| --- | --- | --- |
-| Frontend | Vercel | Root Directory `frontend`, env `NEXT_PUBLIC_BACKEND_URL` |
-| Backend + model | Render (Blueprint) or HF Spaces (Docker) | `render.yaml` / `backend/Dockerfile` ready |
+The site is a **PWA** — installable from the browser, no store needed:
 
-The full step-by-step guide lives in [docs/deploy.md](docs/deploy.md) —
-including CORS closure (ALLOWED_ORIGINS) after your Vercel domain is known,
-the verification checklist, and honest free-tier limitations (cold starts,
-SQLite resets on redeploy).
+- **Android (Chrome):** open the site → menu (⋮) → *Add to Home screen / Install app*
+- **iPhone (Safari):** Share → *Add to Home Screen*
+- **Desktop (Chrome/Edge):** address-bar install icon → *Install*
 
-Quick sanity check after any backend change:
+To build a real **APK**, wrap the PWA with [PWABuilder](https://www.pwabuilder.com)
+(paste the live URL → Android package → signed APK/AAB). iOS/TestFlight and a
+plain `.exe` are possible the same way (PWABuilder → Windows package). No code changes needed.
+
+---
+
+## 🔁 Reproduce locally
 
 ```bash
-cd backend && python -m pytest tests -v        # 10 tests, real model
-cd frontend && npm run build                   # production build
+# Backend (http://localhost:8000, /health shows model_loaded)
+cd backend && pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+# Frontend (http://localhost:3000)
+cd frontend && npm install && npm run dev   # .env.local: NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+
+# Tests
+cd backend && python -m pytest tests -v     # 10 tests, real model
 ```
+
+Retraining with new data: [ml/src/download_data.md](ml/src/download_data.md)
+(section "Adding MORE data later") → Colab notebook → evaluate/calibrate/export.
+
+---
+
+## 🚧 Roadmap
+
+- [x] **Phase 1** — Repository setup
+- [x] **Phase 2** — Data + ML (trained on Colab; ONNX export with parity check)
+- [x] **Phase 3** — Backend (FastAPI, inference, calibrated threshold, Bangla guidelines, tests)
+- [x] **Phase 4** — Frontend (Next.js 15, Bangla-first UI, upload/result/uncertain, history)
+- [x] **Phase 5** — Deployment (live on Vercel; PWA installable)
+- [ ] **Next: accuracy v2** — collect 50–100 real field photos per class, retrain with
+      `--merge-sources`, re-calibrate the threshold (target: lower 0.97 threshold, fewer
+      uncertain results), add the two missing rice classes
+- [ ] **Reports/"data engine"** — store anonymized upload thumbnails (opt-in) to build a
+      real Bangladeshi field dataset over time
+
+---
+
+## 💡 Ideas & Suggestions (`v2+`)
+
+1. **Field-data flywheel (highest value):** the single biggest accuracy lever. Every
+   uncertain scan is candidate data. With farmer cooperation (or an agriculture-office
+   pilot), 100 photos/class turns this from 61% lab-accurate to genuinely field-ready.
+2. **Bangla voice output** (Web Speech API, free): read the advice aloud — many target
+   users read with difficulty. ~30 lines of code.
+3. **Offline model demo:** move the ONNX inference into the browser (onnxruntime-web)
+   so scans work without internet — valuable in rural areas; history still syncs later.
+4. **Officer dashboard:** a simple page where the local agriculture officer sees a
+   dense local map/table of what diseases are being reported this week — turns the
+   app from a diagnostic into a surveillance tool.
+5. **Flutter mobile app** wrapping this same API, if a store-distributed APK (
+   Play Store) is required later; the backend contract stays unchanged.
 
 ---
 
 ## ⚠️ Important Limitations
 
-- **This is a research/educational prototype. Advice text MUST be reviewed by a
-  qualified agriculture expert before any real-world use.** The app is not a
-  replacement for a plant-pathology expert or an agriculture officer.
-- Model metrics and accuracy will be published **only after real training runs** —
-  nothing is fabricated ahead of time.
-- Performance on field photos (real phones, bad light) will differ from clean
-  laboratory datasets; a field-test gap will be measured and reported honestly.
-
----
+- **Research/educational prototype.** Advice text should be reviewed by a qualified
+  agriculture expert before any real-world deployment. Not a replacement for a
+  plant-pathology expert or agriculture officer.
+- All published metrics come from the real test run (see [ml/reports/](ml/reports)); nothing is estimated or invented.
+- Field-photo performance lags lab performance (measured; the UI communicates this honestly).
 
 ## 📜 License
 
