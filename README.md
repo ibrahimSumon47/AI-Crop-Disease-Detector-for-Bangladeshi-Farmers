@@ -87,12 +87,33 @@ Full details: [docs/architecture.md](docs/architecture.md)
 ## 🚧 Project Roadmap
 
 - [x] **Phase 1** — Repository setup
-- [ ] **Phase 2** — Data + ML (PlantVillage / PlantDoc / rice leaf dataset, transfer learning, ONNX export)
-- [ ] **Phase 3** — Backend (FastAPI, inference service, Bangla advice, history, tests, Docker)
-- [ ] **Phase 4** — Frontend (Next.js, Bangla/English, upload, result card, history)
+- [ ] **Phase 2** — Data + ML (PlantVillage/PlantDoc + rice dataset; MobileNetV2 transfer learning; trained on Colab; ONNX export with parity check) — ✅
+- [ ] **Phase 3** — Backend (FastAPI, ONNX inference, calibrated threshold 0.97, Bangla guidelines, /predict + /history, 10 passing tests) — ✅
+- [ ] **Phase 4** — Frontend (Next.js 15 + Tailwind 4, Bangla-first UI, upload, result card, honest-uncertain screen, scan history) — ✅
 - [ ] **Phase 5** — Integration + QA (docker-compose, field test with real phone photos)
 - [ ] **Phase 6** — Deployment (HF Spaces/Render + Vercel)
 - [ ] **Phase 7** — Documentation, model card, release v1.0.0
+
+---
+
+## 🚀 Deployment (free tiers)
+
+| Piece | Host | Notes |
+| --- | --- | --- |
+| Frontend | Vercel | Root Directory `frontend`, env `NEXT_PUBLIC_BACKEND_URL` |
+| Backend + model | Render (Blueprint) or HF Spaces (Docker) | `render.yaml` / `backend/Dockerfile` ready |
+
+The full step-by-step guide lives in [docs/deploy.md](docs/deploy.md) —
+including CORS closure (ALLOWED_ORIGINS) after your Vercel domain is known,
+the verification checklist, and honest free-tier limitations (cold starts,
+SQLite resets on redeploy).
+
+Quick sanity check after any backend change:
+
+```bash
+cd backend && python -m pytest tests -v        # 10 tests, real model
+cd frontend && npm run build                   # production build
+```
 
 ---
 
