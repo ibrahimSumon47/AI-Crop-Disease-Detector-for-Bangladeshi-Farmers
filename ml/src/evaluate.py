@@ -61,8 +61,13 @@ def predict_all(model, ds):
 
     y_true, y_pred, probs_top = [], [], []
     for images, labels in ds:
-        probs = model.predict_on_batch(images).numpy()
-        y_true.extend(labels.numpy().tolist())
+        preds = model.predict_on_batch(images)
+        # Keras 2 returned an EagerTensor (needs .numpy()); Keras 3 (TF >= 2.16)
+        # returns an np.ndarray already — handle both so the script is portable.
+        probs = preds.numpy() if hasattr(preds, "numpy") else np.asarray(preds)
+        # Same for the labels coming out of the tf.data batch.
+        labels_np = labels.numpy() if hasattr(labels, "numpy") else np.asarray(labels)
+        y_true.extend(np.asarray(labels_np).reshape(-1).tolist())
         y_pred.extend(probs.argmax(axis=1).tolist())
         probs_top.extend(probs.max(axis=1).tolist())
     return np.array(y_true), np.array(y_pred), np.array(probs_top)
