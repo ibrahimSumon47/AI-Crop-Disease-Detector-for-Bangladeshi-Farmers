@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens (Tailwind v4 @theme).
+ * Colors chosen for outdoor readability: strong green (agriculture),
+ * amber for warnings ("not sure" flow), high-contrast text.
+ */
+@theme {
+  --color-leaf-50: #f0fdf4;
+  --color-leaf-100: #dcfce7;
+  --color-leaf-500: #22c55e;
+  --color-leaf-600: #16a34a;
+  --color-leaf-700: #15803d;
+  --color-soil-600: #92400e;
+  --color-soil-700: #b45309;
+  --color-warn-100: #fef3c7;
+  --color-warn-500: #f59e0b;
+  --color-warn-700: #b45309;
+  --font-bangla: var(--font-noto-bengali), system-ui, sans-serif;
+}
+
+/* Larger base size — many farmers are on small phone screens. */
+html {
+  font-size: 17px;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--color-leaf-50);
+  color: #1c1917;
+}
