@@ -1,5 +1,4 @@
 {
-  "comment": "Vercel Services mode (2026): one project, two services. 'web' = Next.js frontend (frontend/), 'api' = FastAPI Python function (api/index.py) which mounts the real backend under /api/*. Top-level rewrites expose both: /api/* -> api, everything else -> web. Same-origin, so no CORS needed.",
   "services": {
     "web": {
       "root": "frontend/"
