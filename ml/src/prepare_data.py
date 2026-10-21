@@ -146,13 +146,23 @@ def source_rank(source: str) -> int:
     return len(PRIORITY_SOURCES)
 
 
-def collect_images(raw_dir: Path) -> dict[str, list[Path]]:
+def collect_images(raw_dir: Path, merge_all: bool = False) -> dict[str, list[Path]]:
     """Recursively find images under `raw_dir` and group them by canonical class.
 
     Images are bucketed per (class, source). Afterwards, for every class the
-    HIGHEST-priority source is chosen as THE single source for that class
-    (avoids lab-lab duplicates and mixed domains). Returns
-    {canonical_class: [image paths sorted by name]}.
+    source selection depends on `merge_all`:
+
+    - merge_all=False (default, historical behavior): the HIGHEST-priority
+      source is chosen as THE single source for that class (avoids
+      lab-lab duplicates and mixed domains).
+    - merge_all=True: images from ALL sources for that class are combined.
+      Use this when progressively adding data on top of the existing set,
+      especially real field photos (see ml/src/download_data.md).
+
+    Deduplication: identical paths cannot occur, but the same image copied
+    under two sources would count twice — name your additions uniquely.
+
+    Returns {canonical_class: [image paths sorted by name]}.
     """
     buckets: dict[str, dict[str, list[Path]]] = {c: {} for c in CLASSES}
     skipped: list[str] = []
@@ -180,17 +190,26 @@ def collect_images(raw_dir: Path) -> dict[str, list[Path]]:
             continue
         buckets[canonical].setdefault(source, []).append(image_path)
 
-    # ---- pick ONE source per class (highest priority, fewest empties) ----
+    # ---- pick the source strategy per class --------------------------------
     grouped: dict[str, list[Path]] = {c: [] for c in CLASSES}
     for canonical, by_source in buckets.items():
         if not by_source:
             continue
-        best = sorted(by_source.items(), key=lambda kv: (source_rank(kv[0]), -len(kv[1])))[0]
-        grouped[canonical] = sorted(best[1])
-        others = {k: len(v) for k, v in by_source.items() if k != best[0]}
-        if others:
-            print(f"[prepare_data] class '{canonical}': using source '{best[0]}' "
-                  f"({len(best[1])} images), ignored sources: {others}")
+        if merge_all:
+            all_paths: list[Path] = []
+            for paths in by_source.values():
+                all_paths.extend(paths)
+            grouped[canonical] = sorted(all_paths)
+            parts = {k: len(v) for k, v in sorted(by_source.items())}
+            print(f"[prepare_data] class '{canonical}': MERGED {len(all_paths)} images "
+                  f"from sources {parts}")
+        else:
+            best = sorted(by_source.items(), key=lambda kv: (source_rank(kv[0]), -len(kv[1])))[0]
+            grouped[canonical] = sorted(best[1])
+            others = {k: len(v) for k, v in by_source.items() if k != best[0]}
+            if others:
+                print(f"[prepare_data] class '{canonical}': using source '{best[0]}' "
+                      f"({len(best[1])} images), ignored sources: {others}")
 
     if skipped:
         unique_skipped = sorted(set(skipped))
@@ -272,6 +291,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument(
+        "--merge-sources",
+        action="store_true",
+        help=(
+            "Combine images from ALL raw sources per class instead of picking "
+            "the single highest-priority source. Use when you have added new "
+            "data (e.g. ml/data/raw/field/) on top of the existing datasets."
+        ),
+    )
     args = parser.parse_args()
 
     if not args.raw_dir.exists():
@@ -280,8 +308,8 @@ def main() -> None:
             "See ml/src/download_data.md for the download steps."
         )
 
-    print(f"[prepare_data] scanning {args.raw_dir} ...")
-    grouped = collect_images(args.raw_dir)
+    print(f"[prepare_data] scanning {args.raw_dir} ... (merge_all={args.merge_sources})")
+    grouped = collect_images(args.raw_dir, merge_all=args.merge_sources)
     print("[prepare_data] per-class image counts:")
     for class_name, paths in grouped.items():
         mark = "" if paths else "   <<< NO IMAGES"

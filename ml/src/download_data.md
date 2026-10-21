@@ -84,3 +84,50 @@ Later, 20-30 real photos taken with an actual phone are needed to measure
 the lab-vs-field gap (task T5.3). Put them into `data/field_test/<class>/`
 (following the same class naming) and run
 `python ml/src/evaluate.py --field-test data/field_test`.
+
+
+---
+
+## 4. Adding MORE data later (progressive improvement)
+
+The trainer is only as good as its data. The current model (61.34% test acc)
+was trained on ~24,400 lab images; adding data helps most in this order:
+
+1. **Real field photos** (biggest win): your own phone photos of Bangladeshi
+   crops in real light — the lab-vs-field gap is the likely main error source.
+2. **Missing classes**: `rice_bacterial_leaf_blight` and `rice_tungro` had NO
+   training images this run; finding a source for them lifts macro-F1.
+3. **More lab images** for weak classes (see metrics.md: potato_healthy,
+   tomato_early_blight recall are low).
+
+### How to add
+
+1. Drop images into a NEW folder per source, class-named using the aliases
+   from `prepare_data.py` (or exact canonical names), e.g.:
+
+   ```
+   ml/data/raw/field/                 <- your new source folder
+       tomato_early_blight/ IMG_001.jpg ...
+       rice_blast/ ...
+   ```
+
+   Any folder name that resolves via the alias map works
+   (`Tomato___Early_blight`, `Tomato Early blight`, ...).
+
+2. Re-merge, ADDITIONALLY to the existing datasets:
+
+   ```
+   python ml/src/prepare_data.py --merge-sources
+   ```
+
+   (Without `--merge-sources` the script keeps the historical
+   one-source-per-class behavior and would ignore your new folder when a
+   higher-priority source has the same class — so pass the flag.)
+
+3. Retrain on Kaggle/Colab exactly as before (ml/notebooks/train_kaggle.ipynb),
+   then re-run evaluation + threshold calibration + ONNX export. Compare
+   against ml/reports/metrics.md to see whether the model actually improved.
+
+4. Field-photo tip: aim for roughly balanced classes; 50-100 real photos per
+   class already helps. Photograph the same diseased leaf from 2-3 angles and
+   distances; keep the leaf filling most of the frame.
