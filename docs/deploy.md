@@ -96,3 +96,43 @@ frontend origin:
 | `DATABASE_URL` | Render/HF env | default SQLite (or Postgres later) |
 | `LLM_API_KEY` | Render/HF secret (optional) | empty by default |
 | `NEXT_PUBLIC_BACKEND_URL` | Vercel env | backend base URL |
+
+---
+
+## Option B — Whole project on a single Vercel deployment
+
+Yes, everything (frontend + backend + 9 MB ONNX model) can run on **one
+Vercel project** — the repo ships `api/index.py` (Python serverless function
+mounting the real backend routers under `/api/*`) and a root `vercel.json`
+(builds Next.js from `frontend/`, ships `backend/**` into the function bundle).
+
+### Setup
+
+1. Vercel → Add New → Project → import this repo. **No rootDir needed**;
+   the root `vercel.json` drives the whole build.
+2. Environment Variables (Production + Preview):
+   | Variable | Value | Why |
+   | --- | --- | --- |
+   | `NEXT_PUBLIC_BACKEND_URL` | `/api` | same-origin call, no CORS at all |
+   | `DATABASE_URL` | `sqlite:////tmp/scans.db` | deployed FS is read-only; /tmp is the only writable dir |
+   | `MAX_UPLOAD_MB` | `4` | serverless request bodies cap at ~4.5 MB |
+   | `CONFIDENCE_THRESHOLD` | `0.97` | calibrated value |
+   | `LLM_API_KEY` | (optional) | empty by default |
+3. Deploy. Verify `https://<app>.vercel.app/api/health` → `model_loaded: true`,
+   then the UI at `https://<app>.vercel.app/`.
+
+No CORS configuration is needed in this mode: the browser only
+talks to its own origin, so there is no `ALLOWED_ORIGINS` work.
+
+### Honest trade-offs of the full-Vercel mode
+
+- Scan history lives in the function's `/tmp` SQLite: **not durable** across
+  cold starts or redeploys. Fine for a demo; use Vercel Postgres (free Neon
+  tier) for durable history — swap only `DATABASE_URL`, the code is unchanged.
+- The first request after ~15 min idle is cold and slower (model loads per
+  instance; a ~9 MB model takes only a few seconds).
+- Uploads are capped at 4 MB instead of 5 MB (platform limit).
+
+> Option A (Render backend + Vercel frontend) keeps durable SQLite history
+> and a warm server; Option B (Vercel-only) is one account and zero CORS.
+> Both keep exactly the same API contract.
