@@ -1,0 +1,8 @@
+# Never ship dev/test artifacts inside the image.
+__pycache__/
+*.py[cod]
+.venv/
+tests/
+.pytest_cache/
+app_data.db
+*.log
