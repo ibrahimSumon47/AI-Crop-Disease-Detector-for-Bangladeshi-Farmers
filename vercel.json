@@ -1,13 +1,23 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "comment": "Full single-project deployment: Next.js app (frontend/) + FastAPI Python serverless function (api/index.py under /api/*) in one Vercel project. See docs/deploy.md (full-Vercel mode).",
-  "buildCommand": "cd frontend && npm install --include=dev && npm run build",
-  "outputDirectory": "frontend/.next",
-  "functions": {
-    "api/index.py": {
-      "includeFiles": "backend/**",
-      "memory": 1024,
-      "maxDuration": 30
+  "comment": "Vercel Services mode (2026): one project, two services. 'web' = Next.js frontend (frontend/), 'api' = FastAPI Python function (api/index.py) which mounts the real backend under /api/*. Top-level rewrites expose both: /api/* -> api, everything else -> web. Same-origin, so no CORS needed.",
+  "services": {
+    "web": {
+      "root": "frontend/"
+    },
+    "api": {
+      "root": ".",
+      "entrypoint": "api.index:app",
+      "functions": {
+        "api/index.py": {
+          "includeFiles": "backend/**",
+          "memory": 1024,
+          "maxDuration": 30
+        }
+      }
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "api" } },
+    { "source": "/(.*)", "destination": { "service": "web" } }
+  ]
 }
