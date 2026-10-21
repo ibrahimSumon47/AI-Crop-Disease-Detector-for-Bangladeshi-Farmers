@@ -65,13 +65,17 @@ tomato (bacterial spot, early blight, late blight, leaf mold, healthy)
 | --- | --- |
 | Top-1 accuracy | **61.34%** |
 | Macro F1 | 0.526 |
-| Calibrated threshold | 0.97 (precision 93.6% @ 9.9% coverage on validation) |
+| Launch threshold | 0.30 (deployment choice — see note below) |
 
 Strong classes: tomato_bacterial_spot (F1 0.79), tomato_healthy (0.74), potato_early_blight (0.72).
 Weak: tomato_early_blight recall (0.20), potato_late_blight (0.46), rice classes (lab-vs-field gap).
 **Full per-class table:** [ml/reports/metrics.md](ml/reports/metrics.md) · confusion matrix:
 [ml/reports/confusion_matrix.png](ml/reports/confusion_matrix.png)
 
+> ℹ️ **Threshold note:** validation sweeps favor 0.97 for lab-like inputs, but real
+> field photos score far lower, so the launch uses 0.30 — the UI still labels
+> results under it as low-confidence and surfaces the family note.
+>
 > ⚠️ **Known limitation (measured, honest):** the model was trained on clean lab datasets,
 > so on real field/phone photos it is often right at the top but with low confidence
 > (e.g., a potato early-blight leaf ranked #1 at 14%). The app handles this honestly
@@ -151,7 +155,7 @@ Deployed on **one free Vercel project** (frontend + backend + model together):
 1. Import the repo at Vercel → configuration lives in [vercel.json](vercel.json)
    (Vercel *Services* mode: `web` service = `frontend/`, `api` service = Python function).
 2. Environment variables: `NEXT_PUBLIC_BACKEND_URL=/api`, `DATABASE_URL=sqlite:////tmp/scans.db`,
-   `MAX_UPLOAD_MB=4`, `CONFIDENCE_THRESHOLD=0.97`.
+   `MAX_UPLOAD_MB=4`, `CONFIDENCE_THRESHOLD=0.30`.
 3. Step-by-step (including the Render/HF Spaces alternative backend):
    **[docs/deploy.md](docs/deploy.md)**.
 

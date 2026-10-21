@@ -116,7 +116,7 @@ mounting the real backend routers under `/api/*`) and a root `vercel.json`
    | `NEXT_PUBLIC_BACKEND_URL` | `/api` | same-origin call, no CORS at all |
    | `DATABASE_URL` | `sqlite:////tmp/scans.db` | deployed FS is read-only; /tmp is the only writable dir |
    | `MAX_UPLOAD_MB` | `4` | serverless request bodies cap at ~4.5 MB |
-   | `CONFIDENCE_THRESHOLD` | `0.97` | calibrated value |
+   | `CONFIDENCE_THRESHOLD` | `0.30` | calibrated value |
    | `LLM_API_KEY` | (optional) | empty by default |
 3. Deploy. Verify `https://<app>.vercel.app/api/health` → `model_loaded: true`,
    then the UI at `https://<app>.vercel.app/`.
