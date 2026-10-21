@@ -102,7 +102,7 @@ pipeline (data → train → evaluate → calibrate → export ONNX).
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | Next.js 15 (App Router, TypeScript) + Tailwind CSS 4, Noto Sans Bengali, PWA manifest |
+| Frontend | Next.js 16 (App Router, TypeScript) + Tailwind CSS 4, Noto Sans Bengali, PWA manifest |
 | Backend | FastAPI (Python), SQLite via SQLAlchemy, ONNX Runtime inference |
 | Deployment | **Single Vercel project** — Next.js service + Python serverless function (`api/index.py` mounts the backend under `/api/*`), shared origin, no CORS needed |
 | ML | TensorFlow/Keras (MobileNetV2) → ONNX → onnxruntime |
@@ -198,30 +198,13 @@ Retraining with new data: [ml/src/download_data.md](ml/src/download_data.md)
 - [x] **Phase 1** — Repository setup
 - [x] **Phase 2** — Data + ML (trained on Colab; ONNX export with parity check)
 - [x] **Phase 3** — Backend (FastAPI, inference, calibrated threshold, Bangla guidelines, tests)
-- [x] **Phase 4** — Frontend (Next.js 15, Bangla-first UI, upload/result/uncertain, history)
+- [x] **Phase 4** — Frontend (Next.js 16, Bangla-first UI, upload/result/uncertain, history)
 - [x] **Phase 5** — Deployment (live on Vercel; PWA installable)
 - [ ] **Next: accuracy v2** — collect 50–100 real field photos per class, retrain with
       `--merge-sources`, re-calibrate the threshold (target: lower 0.97 threshold, fewer
       uncertain results), add the two missing rice classes
 - [ ] **Reports/"data engine"** — store anonymized upload thumbnails (opt-in) to build a
       real Bangladeshi field dataset over time
-
----
-
-## 💡 Ideas & Suggestions (`v2+`)
-
-1. **Field-data flywheel (highest value):** the single biggest accuracy lever. Every
-   uncertain scan is candidate data. With farmer cooperation (or an agriculture-office
-   pilot), 100 photos/class turns this from 61% lab-accurate to genuinely field-ready.
-2. **Bangla voice output** (Web Speech API, free): read the advice aloud — many target
-   users read with difficulty. ~30 lines of code.
-3. **Offline model demo:** move the ONNX inference into the browser (onnxruntime-web)
-   so scans work without internet — valuable in rural areas; history still syncs later.
-4. **Officer dashboard:** a simple page where the local agriculture officer sees a
-   dense local map/table of what diseases are being reported this week — turns the
-   app from a diagnostic into a surveillance tool.
-5. **Flutter mobile app** wrapping this same API, if a store-distributed APK (
-   Play Store) is required later; the backend contract stays unchanged.
 
 ---
 
