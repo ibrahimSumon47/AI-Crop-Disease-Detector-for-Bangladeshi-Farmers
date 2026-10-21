@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "comment": "Set NEXT_PUBLIC_BACKEND_URL in Vercel project settings > Environment Variables (docs/deploy.md)."
+}
