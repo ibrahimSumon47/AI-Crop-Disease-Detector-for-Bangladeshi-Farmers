@@ -52,8 +52,17 @@ class PredictionResponse(BaseModel):
         None,
         description=(
             "Present when the model is torn between the same disease on potato "
-            "and tomato (shared blight family). The frontend displays this note "
-            "prominently; the attached advice applies to BOTH crops."
+            "and tomato (shared blight family), or when a rice photo needs a "
+            "leaf close-up. The frontend displays this note prominently; the "
+            "attached advice applies as described in the note."
+        ),
+    )
+    crop_unclear: bool = Field(
+        False,
+        description=(
+            "True when even the top-1 confidence is below 0.25 — the crop field "
+            "itself is a guess. The UI hides the most-likely advice and coaches "
+            "the farmer to retake a proper leaf close-up in good light."
         ),
     )
     scan_id: int | None = Field(None, description="DB id of the saved scan row")

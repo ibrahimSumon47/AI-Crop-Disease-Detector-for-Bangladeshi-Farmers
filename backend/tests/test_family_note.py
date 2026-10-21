@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # backend/ on path
 
-from app.services.processing import RICE_NOTE, attach_family_note  # noqa: E402
+from app.services.processing import RICE_NOTE, attach_family_note, is_crop_unclear  # noqa: E402
 
 
 def _p(cls, c):
@@ -73,6 +73,21 @@ def test_rice_plant_photo_gets_closeup_note():
     note = attach_family_note(top3)
     assert note is RICE_NOTE
     assert "পাতার কাছ থেকে" in note or "কাছ থেকে" in note
+
+
+def test_crop_unclear_when_top1_below_25_percent():
+    # User-observed case: rice plant photo landed on potato_healthy 19%.
+    top3 = [
+        _p("potato_healthy", 0.19),
+        _p("tomato_healthy", 0.09),
+        _p("potato_late_blight", 0.08),
+    ]
+    assert is_crop_unclear(top3) is True
+
+
+def test_crop_clear_when_top1_25_percent_or_more():
+    top3 = [_p("potato_healthy", 0.31), _p("rice_healthy", 0.20), _p("tomato_healthy", 0.10)]
+    assert is_crop_unclear(top3) is False
 
 
 def test_rice_high_confidence_no_note():

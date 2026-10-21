@@ -46,12 +46,28 @@ export default function UncertainNotice({ result }: { result: PredictionResponse
         )}
       </section>
 
+      {/* When even the CROP is a guess (<25%): coach a retake, demote advice */}
+      {result.crop_unclear && (
+        <section className="rounded-xl bg-warn-100 border border-warn-500 p-4" data-testid="crop-unclear-guide">
+          <p className="text-sm leading-relaxed">
+            🔍 <strong>ফসলটিও অস্পষ্ট হয়ে গেছে</strong> (আস্থা খুব কম)। ভালো নির্ণয়
+            পেতে: সকাল/বিকেল দিন-আলোয়, একটি <strong>সন্দেহভাজন পাতা কাছ থেকে</strong> তুলুন —
+            পাতা যেন ফ্রেমের বেশিরভাগ জুড়ে থাকে এবং রোগের দাগ স্পষ্ট দেখা যায়।
+          </p>
+        </section>
+      )}
+
       {/* 2) Best guess advice, clearly labeled LOW-CONFIDENCE */}
       {advice.source !== "none" && advice.treatment && (
         <section className="rounded-xl border border-leaf-100 bg-white p-4" data-testid="best-guess-advice">
           <div className="mb-2 flex items-start justify-between gap-3">
             <div>
-              <h3 className="font-bold text-leaf-700">সম্ভাব্য রোগ: {result.disease_bn}</h3>
+              <h3 className="font-bold text-leaf-700">
+                সম্ভাব্য রোগ: {result.disease_bn}
+                {result.crop_unclear && (
+                  <span className="ml-2 text-xs font-normal text-warn-700">(ফসল অস্পষ্ট — নিচের নির্দেশনা মানুন)</span>
+                )}
+              </h3>
               <p className="text-xs text-stone-500">
                 মিলের সম্ভাবনা কম ({pct(result.confidence)}) — এই পরামর্শ সাবধানে নিন
               </p>

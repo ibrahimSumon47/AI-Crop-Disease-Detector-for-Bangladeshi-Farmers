@@ -46,6 +46,7 @@ async def predict_leaf(
 
     top3 = inference.predict_top3(batch)
     family_note = processing.attach_family_note(top3)
+    crop_unclear = processing.is_crop_unclear(top3)
     best = top3[0]
     is_uncertain = best["confidence"] < settings.confidence_threshold
 
@@ -81,6 +82,7 @@ async def predict_leaf(
         is_uncertain=is_uncertain,
         advice=advice,
         family_note=family_note,
+        crop_unclear=crop_unclear,
         scan_id=scan.id,
         created_at=scan.created_at,
     )

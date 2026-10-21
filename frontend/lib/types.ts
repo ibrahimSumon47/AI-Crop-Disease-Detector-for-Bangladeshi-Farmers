@@ -35,6 +35,8 @@ export interface PredictionResponse {
   advice: Advice;
   /** Present when the model is torn between the same disease on potato vs tomato. */
   family_note: string | null;
+  /** True when even the top-1 is below 0.25 — the crop itself is a guess. */
+  crop_unclear: boolean;
   scan_id: number | null;
   created_at: string;
 }

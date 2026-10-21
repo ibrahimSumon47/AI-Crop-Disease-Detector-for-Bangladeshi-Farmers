@@ -44,6 +44,12 @@ CROSS_CROP_FAMILY: dict[str, tuple[str, str]] = {
     "tomato_late_blight": ("অনাগাম পাতা পোড়া", "potato_late_blight"),
 }
 
+CROP_UNCLEAR_NOTE = (
+    "🔍 এই ফসলটিও অস্পষ্ট (আস্থা ২৫%-এর কম)। সকাল/বিকেল দিন-আলোতে, একটি মাত্র "
+    "সন্দেহভাজন পাতা **কাছ থেকে** তুলুন — পাতা যেন ফ্রেমের বেশিরভাগ জুড়ে থাকে এবং "
+    "দাগ স্পষ্ট দেখা যায়। নিচের পরামর্শটি সবচেয়ে সম্ভাব্য বিকল্পের, তাই সাবধানে মিলিয়ে নিন।"
+)
+
 RICE_NOTE = (
     "🌾 আপনি গোটা গাছের ছবি দিয়েছেন। ধানের পাতার ভেতরে ভেজা আকৃতির ধূসর-কেন্দ্রের দাগ "
     "(ব্লাস্ট) আর ছোট বাদামি দাগ — দুটোই সম্ভাব্য, নিশ্চিত করা যায়নি। "
@@ -58,6 +64,17 @@ FAMILY_NOTE_TMPL = (
     "পরামর্শ দুই ফসলের জন্যই প্রযোজ্য — সবচেয়ে মুল্যবান তথ্য হলো রোগের নাম, "
     "ফসলের নাম নয়।"
 )
+
+
+def is_crop_unclear(top3: list[dict]) -> bool:
+    """True when even the top-1 is below 0.25 — the crop itself is a guess.
+
+    At this level the headline (crop + disease) is not trustworthy, so the
+    frontend hides the most-likely advice and instead coaches the farmer to
+    retake a proper close-up photo. Everything still stays on screen (top-3
+    list), just demoted from advice.
+    """
+    return bool(top3) and top3[0]["confidence"] < 0.25
 
 
 def attach_family_note(top3: list[dict]) -> str | None:
