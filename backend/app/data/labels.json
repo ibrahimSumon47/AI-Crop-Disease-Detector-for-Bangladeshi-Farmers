@@ -1,0 +1,73 @@
+{
+  "n_classes": 11,
+  "input_size": [224, 224],
+  "labels": {
+    "0": {
+      "class": "potato_early_blight",
+      "en": "Potato Early Blight",
+      "bn": "আলু — আগাম পাতা পোড়া (Early Blight)",
+      "crop": "potato"
+    },
+    "1": {
+      "class": "potato_healthy",
+      "en": "Potato - Healthy",
+      "bn": "আলু — সুস্থ পাতা",
+      "crop": "potato"
+    },
+    "2": {
+      "class": "potato_late_blight",
+      "en": "Potato Late Blight",
+      "bn": "আলু — অনাগাম পাতা পোড়া (Late Blight)",
+      "crop": "potato"
+    },
+    "3": {
+      "class": "rice_blast",
+      "en": "Rice Blast",
+      "bn": "ধান — ব্লাস্ট রোগ",
+      "crop": "rice"
+    },
+    "4": {
+      "class": "rice_brown_spot",
+      "en": "Rice Brown Spot",
+      "bn": "ধান — বাদামি দাগ",
+      "crop": "rice"
+    },
+    "5": {
+      "class": "rice_healthy",
+      "en": "Rice - Healthy",
+      "bn": "ধান — সুস্থ পাতা",
+      "crop": "rice"
+    },
+    "6": {
+      "class": "tomato_bacterial_spot",
+      "en": "Tomato Bacterial Spot",
+      "bn": "টম্যাটো — ব্যাকটেরিয়াল স্পট",
+      "crop": "tomato"
+    },
+    "7": {
+      "class": "tomato_early_blight",
+      "en": "Tomato Early Blight",
+      "bn": "টম্যাটো — আগাম পাতা পোড়া (Early Blight)",
+      "crop": "tomato"
+    },
+    "8": {
+      "class": "tomato_healthy",
+      "en": "Tomato - Healthy",
+      "bn": "টম্যাটো — সুস্থ পাতা",
+      "crop": "tomato"
+    },
+    "9": {
+      "class": "tomato_late_blight",
+      "en": "Tomato Late Blight",
+      "bn": "টম্যাটো — অনাগাম পাতা পোড়া (Late Blight)",
+      "crop": "tomato"
+    },
+    "10": {
+      "class": "tomato_leaf_mold",
+      "en": "Tomato Leaf Mold",
+      "bn": "টম্যাটো — লিফ মোল্ড",
+      "crop": "tomato"
+    }
+  },
+  "note": "Generated in the MODEL's true output order (verified against ml/reports/history.json 'class_names', which train.py wrote from the actual training data). The 2 canonical classes without training data (rice_bacterial_leaf_blight, rice_tungro) have no output index. Cross-check: ml/reports/metrics.md lists classes in the same order."
+}
