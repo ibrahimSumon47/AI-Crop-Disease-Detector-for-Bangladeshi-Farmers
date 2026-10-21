@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # backend/ on path
 
-from app.services.processing import attach_family_note  # noqa: E402
+from app.services.processing import RICE_NOTE, attach_family_note  # noqa: E402
 
 
 def _p(cls, c):
@@ -61,3 +61,25 @@ def test_note_fires_from_tomato_top1():
     note = attach_family_note(top3)
     assert note is not None
     assert "অনাগাম" in note
+
+
+def test_rice_plant_photo_gets_closeup_note():
+    # Whole-plant rice photo: rice_blast 52% — right family, unsure disease.
+    top3 = [
+        _p("rice_blast", 0.522),
+        _p("rice_brown_spot", 0.371),
+        _p("rice_healthy", 0.107),
+    ]
+    note = attach_family_note(top3)
+    assert note is RICE_NOTE
+    assert "পাতার কাছ থেকে" in note or "কাছ থেকে" in note
+
+
+def test_rice_high_confidence_no_note():
+    # A crisply identified rice disease at lab-level confidence: no note.
+    top3 = [
+        _p("rice_blast", 0.80),
+        _p("rice_brown_spot", 0.10),
+        _p("rice_healthy", 0.05),
+    ]
+    assert attach_family_note(top3) is None

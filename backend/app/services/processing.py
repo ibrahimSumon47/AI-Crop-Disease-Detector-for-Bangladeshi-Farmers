@@ -23,6 +23,14 @@ on (same active ingredients, same remove-burn-infected-leaves guidance). So:
 
 This is honest: we show what the model knows, disclose what it cannot decide,
 and never invent a different diagnosis.
+
+Rice case (measured): a whole rice-plant photo (not a leaf close-up) still
+lands on rice classes — e.g. rice_blast 52% / rice_brown_spot 37% — because
+the model has only LEAF-level classes. That is actually the correct family,
+but (a) a farmers' plant-level photo often shows no blast spot at all, and
+(b) rice leaves of blast/brown-spot/healthy look similar, so picking one
+ disease name at 40-50% without seeing a close-up is not honest. We attach a
+rice-note asking for a leaf close-up with the visible spot.
 """
 
 from __future__ import annotations
@@ -36,6 +44,13 @@ CROSS_CROP_FAMILY: dict[str, tuple[str, str]] = {
     "tomato_late_blight": ("অনাগাম পাতা পোড়া", "potato_late_blight"),
 }
 
+RICE_NOTE = (
+    "🌾 আপনি গোটা গাছের ছবি দিয়েছেন। ধানের পাতার ভেতরে ভেজা আকৃতির ধূসর-কেন্দ্রের দাগ "
+    "(ব্লাস্ট) আর ছোট বাদামি দাগ — দুটোই সম্ভাব্য, নিশ্চিত করা যায়নি। "
+    "সবচেয়ে ভালো নির্ণয় পেতে রোগের দাগযুক্ত পাতা কাছ থেকে (পাতা যেন ফ্রেমে বড়) "
+    "ছবি তুলে আবার দিন। নিচের পরামর্শ দাগযুক্ত পাতার জন্য প্রযোজ্য।"
+)
+
 FAMILY_NOTE_TMPL = (
     "⚠️ মডেল এই রোগটি দুই গাছেই হতে পারে বলে নিশ্চিত নয়: {family} (আলু ও টমেটো "
     "দুটোতে প্রায় একই রোগ — একই ছত্রাক/জীবাণু দুটোতেই আক্রমণ করে)। মডেলের মধ্যে "
@@ -46,7 +61,15 @@ FAMILY_NOTE_TMPL = (
 
 
 def attach_family_note(top3: list[dict]) -> str | None:
-    """Return the family note when the top prediction could be a lost tomato case.
+    """Return a stabilizer note for a prediction, or None.
+
+    Two situations produce notes:
+
+    1. Rice: top-1 is a rice class with low confidence — the model sees the
+       right crop family but cannot honestly choose ONE leaf disease from a
+       plant-level photo; ask for a leaf close-up.
+
+    2. Cross-crop potato<->tomato tear on the same disease (see below).
 
     Conditions (all must hold):
       1. top-1 class has a same-disease relative in the other crop; and
@@ -61,6 +84,12 @@ def attach_family_note(top3: list[dict]) -> str | None:
     if not top3:
         return None
     top1 = top3[0]["class_name"]
+
+    # Rice: the model sees the right crop family, but from a plant-level shot
+    # it cannot honestly name ONE leaf disease — ask for a leaf close-up.
+    if top1.startswith("rice_") and top3[0]["confidence"] < 0.60:
+        return RICE_NOTE
+
     info = CROSS_CROP_FAMILY.get(top1)
     if info is None:
         return None
