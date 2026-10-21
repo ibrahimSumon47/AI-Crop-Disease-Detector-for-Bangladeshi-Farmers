@@ -129,3 +129,7 @@ frontend/.vercel
 ehthumbs.db
 Thumbs.db
 desktop.ini
+
+# Backend runtime artifacts
+backend/*.db
+*.sqlite3
