@@ -33,6 +33,8 @@ export interface PredictionResponse {
   top3: PredictionItem[];
   is_uncertain: boolean;
   advice: Advice;
+  /** Present when the model is torn between the same disease on potato vs tomato. */
+  family_note: string | null;
   scan_id: number | null;
   created_at: string;
 }

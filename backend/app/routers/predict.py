@@ -23,7 +23,7 @@ from ..db import get_db
 from ..models import Scan
 from ..schemas import Advice, PredictionItem, PredictionResponse
 from ..services import guidelines as gl
-from ..services import inference
+from ..services import inference, processing
 from ..services.preprocess import ImageValidationError, preprocess, validate_image
 
 logger = logging.getLogger(__name__)
@@ -45,6 +45,7 @@ async def predict_leaf(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 
     top3 = inference.predict_top3(batch)
+    family_note = processing.attach_family_note(top3)
     best = top3[0]
     is_uncertain = best["confidence"] < settings.confidence_threshold
 
@@ -79,6 +80,7 @@ async def predict_leaf(
         top3=[PredictionItem(**p) for p in top3],
         is_uncertain=is_uncertain,
         advice=advice,
+        family_note=family_note,
         scan_id=scan.id,
         created_at=scan.created_at,
     )

@@ -48,6 +48,14 @@ class PredictionResponse(BaseModel):
         ),
     )
     advice: Advice
+    family_note: str | None = Field(
+        None,
+        description=(
+            "Present when the model is torn between the same disease on potato "
+            "and tomato (shared blight family). The frontend displays this note "
+            "prominently; the attached advice applies to BOTH crops."
+        ),
+    )
     scan_id: int | None = Field(None, description="DB id of the saved scan row")
     created_at: datetime
 

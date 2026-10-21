@@ -39,6 +39,11 @@ export default function UncertainNotice({ result }: { result: PredictionResponse
           <strong>সবচেয়ে সম্ভাব্য রোগ</strong>-এর পরামর্শ দেওয়া হলো — অনুগ্রহ করে
           সেটি ভালো করে মিলিয়ে নিন, এবং নিশ্চিত হতে কৃষি অফিসারের সাথেও কথা বলুন।
         </p>
+        {result.family_note && (
+          <p className="mt-2 rounded-lg bg-white p-3 text-xs leading-relaxed text-warn-700" data-testid="family-note">
+            {result.family_note}
+          </p>
+        )}
       </section>
 
       {/* 2) Best guess advice, clearly labeled LOW-CONFIDENCE */}

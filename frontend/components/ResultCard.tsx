@@ -25,6 +25,13 @@ const BN_LABELS = {
 export default function ResultCard({ result }: { result: PredictionResponse }) {
   return (
     <section className="rounded-xl border border-leaf-100 bg-white p-4" data-testid="result-card">
+      {/* Cross-crop blight note (model torn between potato/tomato same disease) */}
+      {result.family_note && (
+        <p className="mb-3 rounded-lg bg-warn-100 p-3 text-xs leading-relaxed text-warn-700" data-testid="family-note">
+          {result.family_note}
+        </p>
+      )}
+
       {/* Top line: crop + disease + confidence */}
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
