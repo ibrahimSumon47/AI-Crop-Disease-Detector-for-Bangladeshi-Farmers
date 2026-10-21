@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "ফসল রোগ নির্ণয় — AI Crop Disease Detector",
   description:
     "ছবি তুলে ধান, আলু বা টমেটোর পাতার রোগ জানুন — বাংলায় চিকিৎসা পরামর্শ সহ।",
+  // /favicon.ico 404 fix + mobile icon: app/icon.png is auto-served by Next
+  // (favicon + apple-touch); public/icon-*.png serve the PWA manifest.
+  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
+  manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
