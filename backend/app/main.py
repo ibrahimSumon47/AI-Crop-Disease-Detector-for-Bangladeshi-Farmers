@@ -77,7 +77,8 @@ def health_check() -> dict:
 
 
 # Routers — keep /health above so monitoring never depends on model paths.
-from .routers import history, predict  # noqa: E402  (routers import services)
+from .routers import chat, history, predict  # noqa: E402  (routers import services)
 
+app.include_router(chat.router)
 app.include_router(history.router)
 app.include_router(predict.router)

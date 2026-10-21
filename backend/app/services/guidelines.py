@@ -45,6 +45,11 @@ def load_guidelines() -> None:
     logger.info("[guidelines] loaded %d classes from %s", len(_guidelines), path.name)
 
 
+def get_all() -> dict[str, dict[str, str]]:
+    """Full guidelines map (used by the chat fallback router)."""
+    return _guidelines
+
+
 def get_static_advice(class_name: str) -> dict[str, Any] | None:
     """Return the curated advice dict for a class, or None if unknown.
 

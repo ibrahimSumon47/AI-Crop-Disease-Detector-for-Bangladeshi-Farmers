@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Bengali } from "next/font/google";
+import ChatWidget from "@/components/ChatWidget";
 import "./globals.css";
 
 /**
@@ -42,6 +43,7 @@ export default function RootLayout({
           </div>
         </header>
         <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
+        <ChatWidget />
         <footer className="px-4 pb-6 pt-2 text-center text-sm text-stone-500">
           এটি একটি সহায়ক অ্যাপ — চিকিৎসা সিদ্ধান্তে কৃষি অফিসারের পরামর্শ নিন।
         </footer>
