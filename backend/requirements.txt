@@ -1,26 +1,26 @@
 # Backend dependencies for the AI Crop Disease Detector API.
 # Install with:  pip install -r backend/requirements.txt
 #
-# Kept deliberately small so the stack deploys cheaply on Render /
-# Hugging Face Spaces (free tiers).
+# Versions are >= floors (not hard pins) so newer Python deployments
+# (3.12/3.14) can resolve current wheels; free hosts usually run 3.11/3.12.
 
 # --- Web framework ---
-fastapi==0.115.0            # REST API framework (routers, validation, OpenAPI docs)
-uvicorn[standard]==0.30.6   # ASGI dev/production server to run the app
-python-multipart==0.0.9     # multipart/form-data parsing (image upload endpoint)
-pydantic==2.9.2             # request/response validation models
-pydantic-settings==2.5.2    # read config from environment variables (.env support)
+fastapi>=0.115             # REST API framework (routers, validation, OpenAPI docs)
+uvicorn[standard]>=0.30    # ASGI dev/production server to run the app
+python-multipart>=0.0.9    # multipart/form-data parsing (image upload endpoint)
+pydantic>=2.9              # request/response validation models
+pydantic-settings>=2.5     # read config from environment variables (.env support)
 
 # --- Inference ---
-onnxruntime==1.19.2         # runs the exported MobileNetV2 model (CPU)
-pillow==10.4.0              # image decoding, validation and resizing
-numpy==1.26.4               # tensor / probability math around the model
+onnxruntime>=1.19          # runs the exported MobileNetV2 model (CPU)
+pillow>=10.4               # image decoding, validation and resizing
+numpy>=1.26                # tensor / probability math around the model
 
 # --- Persistence ---
-sqlalchemy==2.0.35          # ORM: scan-history SQLite rows
+sqlalchemy>=2.0            # ORM: scan-history SQLite rows
 
 # --- Optional LLM advice layer (grounded rewriting of the Bangla JSON) ---
-httpx==0.27.2               # async HTTP client used only if LLM_API_KEY is set
+httpx>=0.27                # async HTTP client used only if LLM_API_KEY is set
 
 # --- Tests ---
-pytest==8.3.3               # unit/integration tests for routers and services
+pytest>=8.3                # unit/integration tests for routers and services
