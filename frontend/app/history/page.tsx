@@ -110,14 +110,18 @@ function cropBN(crop: string): string {
   return { rice: "ধান", potato: "আলু", tomato: "টম্যাটো" }[crop] ?? crop;
 }
 function diseaseShort(disease: string): string {
-  const map: Record<string, string> = {
-    healthy: "সুস্থ পাতা",
-    early_blight: "আগাম পাতা পোড়া",
-    late_blight: "অনাগাম পাতা পোড়া",
-    blast: "ব্লাস্ট",
-    brown_spot: "বাদামি দাগ",
-    bacterial_spot: "ব্যাকটেরিয়াল স্পট",
-    leaf_mold: "লিফ মোল্ড",
-  };
-  return map[disease] ?? disease;
+  // The API sends full machine names ("rice_brown_spot"); match by keyword.
+  const keywords: Array<[string, string]> = [
+    ["healthy", "সুস্থ পাতা"],
+    ["late_blight", "অনাগাম পাতা পোড়া"],
+    ["early_blight", "আগাম পাতা পোড়া"],
+    ["blast", "ব্লাস্ট"],
+    ["brown_spot", "বাদামি দাগ"],
+    ["bacterial_spot", "ব্যাকটেরিয়াল স্পট"],
+    ["leaf_mold", "লিফ মোল্ড"],
+  ];
+  for (const [key, bn] of keywords) {
+    if (disease.includes(key)) return bn;
+  }
+  return disease;
 }

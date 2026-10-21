@@ -31,7 +31,10 @@ export default function RootLayout({
       <body className={`${bengali.variable} font-bangla antialiased`}>
         <header className="border-b border-leaf-100 bg-white">
           <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-            <span className="text-lg font-bold text-leaf-700">🌱 ফসল রোগ নির্ণয়</span>
+            <div className="flex items-center justify-between w-full">
+              <span className="text-lg font-bold text-leaf-700">🌱 ফসল রোগ নির্ণয়</span>
+              <a href="/history" className="text-sm text-stone-600 underline">📅 ইতিহাস</a>
+            </div>
           </div>
         </header>
         <main className="mx-auto max-w-3xl px-4 py-6">{children}</main>
