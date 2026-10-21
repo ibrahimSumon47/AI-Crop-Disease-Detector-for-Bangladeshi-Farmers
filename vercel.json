@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "comment": "Full single-project deployment: Next.js app (frontend/) + FastAPI Python serverless function (api/index.py under /api/*) in one Vercel project. See docs/deploy.md (full-Vercel mode).",
+  "buildCommand": "cd frontend && npm install --include=dev && npm run build",
+  "outputDirectory": "frontend/.next",
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "backend/**",
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  }
+}

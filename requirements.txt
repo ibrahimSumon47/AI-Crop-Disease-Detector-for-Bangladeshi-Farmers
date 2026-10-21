@@ -1,0 +1,15 @@
+# Runtime dependencies ONLY for the Vercel Python serverless function
+# (api/index.py). The development/Render dependency list still lives in
+# backend/requirements.txt — pytest and uvicorn are not needed on Vercel.
+#
+# Same >= floors as the backend so new interpreters resolve fine.
+
+fastapi>=0.115
+pillow>=10.4
+numpy>=1.26
+onnxruntime>=1.19
+sqlalchemy>=2.0
+python-multipart>=0.0.9
+pydantic>=2.9
+pydantic-settings>=2.5
+httpx>=0.27  # optional LLM layer only
