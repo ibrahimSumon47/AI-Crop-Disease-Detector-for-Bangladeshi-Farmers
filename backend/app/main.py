@@ -30,8 +30,11 @@ async def lifespan(app: FastAPI):
     Loading the ONNX session at startup (instead of per-request) keeps
     inference latency stable. The heavy work lives in services/inference.py.
     """
-    from .services import inference  # delayed: keeps app import cheap (T3.7 wires it)
+    from .db import init_db
+    from .services import guidelines, inference
 
+    init_db()  # creates the SQLite file + tables on first run
+    guidelines.load_guidelines()
     inference.load_model()  # warm-up: reads labels.json + creates the session
     app.state.model_loaded = True
     logger.info("Model loaded and ready.")
@@ -73,5 +76,8 @@ def health_check() -> dict:
     }
 
 
-# Routers are attached when they exist; keep /health above so monitoring
-# never depends on model code paths.
+# Routers — keep /health above so monitoring never depends on model paths.
+from .routers import history, predict  # noqa: E402  (routers import services)
+
+app.include_router(history.router)
+app.include_router(predict.router)
