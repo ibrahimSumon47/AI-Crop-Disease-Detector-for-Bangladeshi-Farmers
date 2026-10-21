@@ -1,0 +1,33 @@
+# Render.com blueprint — deploys the FastAPI backend as a free web service.
+#
+# How the user uses this (docs/deploy.md has full steps):
+#   1. Push the repo (already done — this file lives at the root).
+#   2. In Render: New + -> Blueprint -> pick this GitHub repository.
+#   3. Render reads render.yaml. BEFORE first deploy, set ALLOWED_ORIGINS
+#      in the dashboard to your production frontend origin(s).
+#   4. After it deploys, verify https://<service>.onrender.com/health.
+
+services:
+  - type: web
+    name: crop-disease-api
+    runtime: python
+    rootDir: backend
+    # Free tier: 512 MB is enough because model.onnx is only ~9 MB.
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # Render injects $PORT; uvicorn binds 0.0.0.0 to accept it.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # Comma-separated list of browser origins allowed via CORS.
+      # REPLACE localhost:3000 with your final Vercel domain once it is known.
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:3000
+      # Calibrated on the validation split (ml/reports/threshold.json).
+      - key: CONFIDENCE_THRESHOLD
+        value: "0.97"
+      # Optional Bangla advice LLM rewrite; leave empty to use the JSON only.
+      - key: LLM_API_KEY
+        sync: false
