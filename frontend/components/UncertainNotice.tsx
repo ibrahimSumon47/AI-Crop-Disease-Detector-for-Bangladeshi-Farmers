@@ -31,6 +31,17 @@ export default function UncertainNotice({ result }: { result: PredictionResponse
 
   return (
     <div className="space-y-3">
+      {/* Photo-quality notes (blurry / too dark) — advisory, diagnosis shown below */}
+      {result.photo_warnings && result.photo_warnings.length > 0 && (
+        <div data-testid="photo-warnings">
+          {result.photo_warnings.map((w, i) => (
+            <p key={i} className="rounded-lg bg-white p-3 text-sm leading-relaxed text-stone-700">
+              {w}
+            </p>
+          ))}
+        </div>
+      )}
+
       {/* 1) Honest banner — safety first */}
       <section className="rounded-xl border border-warn-500 bg-warn-100 p-4" data-testid="uncertain-notice">
         <h2 className="text-lg font-bold text-warn-700">⚠️ নিশ্চিত বলা যাচ্ছে না</h2>

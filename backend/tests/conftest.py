@@ -27,6 +27,44 @@ def client() -> Iterator[TestClient]:
         yield c
 
 
+def dataset_leaf(require_clean: bool = True):
+    """Real leaf photo from data/processed/test that the gate accepts.
+
+    Used by tests that exercise the diagnose path: the trained plant gate
+    (correctly) refuses featureless synthetic junk, so a REAL photo is the
+    only honest way to drive the happy path. Skips gracefully (returns
+    None) when the processed test split is not present.
+    """
+    from pathlib import Path
+
+    from PIL import Image
+
+    from app.services import plant_guard
+
+    root = Path(__file__).resolve().parents[2] / "data" / "processed" / "test"
+    if not root.is_dir():
+        return None
+    candidates = [f for d in root.iterdir() if d.is_dir() for f in d.iterdir()
+                  if f.suffix.lower() in (".jpg", ".jpeg", ".png")]
+    if not candidates:
+        return None
+    import random
+
+    random.Random(31).shuffle(candidates)
+    for f in candidates[:60]:
+        try:
+            img = Image.open(f).convert("RGB")
+            ok, _ = plant_guard.looks_like_leaf(img)
+            if not ok:
+                continue
+            if require_clean and plant_guard.photo_warnings(img):
+                continue
+            return f
+        except Exception:
+            continue
+    return None
+
+
 def make_png(width: int = 320, height: int = 320, color: tuple = (60, 130, 60)) -> bytes:
     """Build a synthetic leaf-looking PNG in memory (no file IO needed).
 

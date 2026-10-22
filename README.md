@@ -33,6 +33,7 @@ pesticide recommendation can destroy a farmer's season.
 | --- | --- |
 | 📷 **Scan a leaf** | Capture with the phone camera (`capture="environment"`) or pick a file |
 | 🚫 **Non-leaf guard** | Tuber/product-style photos and flat/blank images are refused with clear Bangla guidance instead of a fake low-% diagnosis |
+| 📐 **Photo-quality warnings** | Blurry or too-dark shots still get a diagnosis, but the response chips in Bangla advice to retake closer / in daylight |
 | 🧠 **AI diagnosis** | Crop + condition prediction across **61 trained classes on 11 crops** |
 | 📊 **Confidence + top-3** | Confidence % and three alternatives, so the farmer sees the whole picture |
 | 🟡 **Honest uncertainty** | Below the calibrated confidence threshold the app refuses to guess: it shows the best guess's advice labeled low-confidence + "consult an agriculture officer" |
@@ -103,10 +104,16 @@ Written in plain language for everyone (farmers, reviewers, developers):
    The app runs a pre-inference sanity gate: a photo that is not a leaf — e.g. a
    sprouted potato/tuber/fruit on a plain product-style background, or an empty/flat
    color image — gets a clear Bangla message ("ছবিতে গাছের পাতা ধরা পড়েনি…") instead of
-   a misleading low-percentage "diagnosis". The gate is a color/texture heuristic
-   calibrated against the real test split; it cannot catch every non-leaf photo
-   (people, documents, distant blurry leaves pass through and rely on the
-   low-confidence path below).
+   a misleading low-percentage "diagnosis". The gate is a small TRAINED classifier
+   (19 hand-crafted color/texture features, gradient-boosted trees, exported to ONNX)
+   trained on real leaves from all 61 classes plus synthetic photo-junk negatives;
+   see [ml/reports/plant_classifier_metrics.json](ml/reports/plant_classifier_metrics.json).
+   On the held-out serving-side evaluation it passes 99.2% of real leaves and
+   catches most junk; **it is not a real-photo leaf detector**: complex real
+   non-plant scenes (people, documents, landscapes) were never in the negative set
+   and rely on the low-confidence path below. Extremely dark/blurry photos of
+   brown-ish leaves can still hit the refusal message — the honest answer there is
+   a daylight retake, which the message asks for.
 1. **It helps, it does not replace an expert.** This app never replaces an agriculture
    officer or a plant-pathology expert; every result screen repeats that message.
 2. **Test accuracy is ~43% per class (61-way task), and that is on clean lab photos.**
@@ -250,6 +257,8 @@ model are in the repo. Training was run on **free Colab/Kaggle T4 GPUs**.
 
 ```
 photo upload → validate (size/type/size-in-px) → plant-leaf sanity gate
+   (flat refusal / trained ONNX plant-vs-non-plant classifier / heuristic fallback)
+   + photo-quality warnings (blur/dark) attached to the response
 → preprocess (224×224, [-1,+1], EXIF-safe)
 → ONNX inference (softmax) → calibrated threshold (0.97)
    ├─ confident → guideline lookup → diagnosis + Bangla advice

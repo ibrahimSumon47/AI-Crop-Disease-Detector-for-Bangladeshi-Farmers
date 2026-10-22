@@ -25,6 +25,17 @@ const BN_LABELS = {
 export default function ResultCard({ result }: { result: PredictionResponse }) {
   return (
     <section className="rounded-xl border border-leaf-100 bg-white p-4" data-testid="result-card">
+      {/* Photo-quality notes (blurry / too dark) — advisory, diagnosis shown below */}
+      {result.photo_warnings && result.photo_warnings.length > 0 && (
+        <div className="mb-3 space-y-2" data-testid="photo-warnings">
+          {result.photo_warnings.map((w, i) => (
+            <p key={i} className="rounded-lg bg-warn-100 p-3 text-sm leading-relaxed text-warn-700">
+              {w}
+            </p>
+          ))}
+        </div>
+      )}
+
       {/* Cross-crop blight note (model torn between potato/tomato same disease) */}
       {result.family_note && (
         <p className="mb-3 rounded-lg bg-warn-100 p-3 text-xs leading-relaxed text-warn-700" data-testid="family-note">
@@ -83,6 +94,21 @@ export default function ResultCard({ result }: { result: PredictionResponse }) {
   );
 }
 
-function cropLabel(crop: PredictionResponse["crop"]): string {
-  return { rice: "ধান", potato: "আলু", tomato: "টম্যাটো" }[crop];
+/** All 11 crops the current model can output (backend/app/data/labels.json). */
+const CROP_BN: Record<string, string> = {
+  rice: "ধান",
+  potato: "আলু",
+  tomato: "টম্যাটো",
+  chilli: "মরিচ",
+  maize: "ভুট্টা",
+  grape: "আঙুর",
+  cauliflower: "ফুলকপি",
+  cucumber: "শসা",
+  papaya: "পেঁপে",
+  mango: "আম",
+  okra: "ঢেঁড়স",
+};
+
+function cropLabel(crop: string): string {
+  return CROP_BN[crop] ?? crop;
 }

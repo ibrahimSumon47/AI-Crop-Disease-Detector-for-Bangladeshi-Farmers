@@ -7,8 +7,10 @@ import json
 
 import pytest
 
+from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # backend/ on path
-from tests.conftest import make_png  # noqa: E402
+from tests.conftest import dataset_leaf, make_png  # noqa: E402
 
 
 def _known_crops() -> set[str]:
@@ -32,11 +34,24 @@ def test_health(client):
 
 
 def test_predict_returns_full_bangla_response(client):
-    """End-to-end: synthetic PNG -> real ONNX inference -> structured JSON."""
-    resp = client.post(
-        "/predict",
-        files={"file": ("leaf.png", make_png(), "image/png")},
-    )
+    """End-to-end: real leaf (or synthetic fallback) -> real ONNX inference
+    -> structured JSON. The trained gate refuses featureless synthetic
+    junk, so a dataset leaf is used when available; skipped when neither
+    is usable."""
+    leaf = dataset_leaf()
+    if leaf:
+        import io
+
+        from PIL import Image
+
+        buf = io.BytesIO()
+        Image.open(leaf).convert("RGB").save(buf, format="JPEG", quality=92)
+        files = {"file": ("leaf.jpg", buf.getvalue(), "image/jpeg")}
+    else:
+        files = {"file": ("leaf.png", make_png(), "image/png")}
+    resp = client.post("/predict", files=files)
+    if resp.status_code == 422 and not leaf:
+        pytest.skip("no clean leaf available for the diagnose path")
     assert resp.status_code == 200
     body = resp.json()
 
@@ -105,9 +120,69 @@ def test_predict_rejects_non_leaf_object_on_plain_background(client):
     assert "পাতা" in resp.json()["detail"]
 
 
+def _degrade(path: Path, brightness: float, blur: float) -> bytes:
+    """Simulate a bad phone shot of that same leaf: blurred + darkened."""
+    import io
+
+    from PIL import Image, ImageEnhance, ImageFilter
+
+    img = Image.open(path).convert("RGB")
+    img = img.filter(ImageFilter.GaussianBlur(blur))
+    img = ImageEnhance.Brightness(img).enhance(brightness)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=88)
+    return buf.getvalue()
+
+
+def test_predict_warns_on_dark_blurry_photo(client):
+    """A real leaf photo degraded to dark+blur must STILL be diagnosed
+    (warnings, not refusal) and must carry Bangla photo-quality notes."""
+    leaf = dataset_leaf(require_clean=False)
+    if leaf is None:
+        pytest.skip("data/processed/test not present")
+    resp = client.post(
+        "/predict",
+        files={"file": ("bad.jpg", _degrade(leaf, 0.35, 6.0), "image/jpeg")},
+    )
+    assert resp.status_code == 200, resp.json()
+    body = resp.json()
+    assert len(body["photo_warnings"]) >= 1
+    assert any("ঝাপসা" in w for w in body["photo_warnings"]), body["photo_warnings"]
+
+
+def test_predict_no_warnings_on_crisp_leaf(client):
+    """An undegraded real leaf must produce NO quality warnings."""
+    leaf = dataset_leaf(require_clean=True)
+    if leaf is None:
+        pytest.skip("data/processed/test not present (or no clean leaf found)")
+    import io
+
+    buf = io.BytesIO()
+    from PIL import Image
+
+    Image.open(leaf).convert("RGB").save(buf, format="JPEG", quality=92)
+    resp = client.post("/predict", files={"file": ("crisp.jpg", buf.getvalue(), "image/jpeg")})
+    assert resp.status_code == 200, resp.json()
+    assert resp.json()["photo_warnings"] == []
+
+
+
 def test_history_lists_saved_scans(client):
     """A successful predict must be visible in history afterwards."""
-    client.post("/predict", files={"file": ("leaf.png", make_png(), "image/png")})
+    leaf = dataset_leaf()
+    if leaf:
+        import io
+
+        from PIL import Image
+
+        buf = io.BytesIO()
+        Image.open(leaf).convert("RGB").save(buf, format="JPEG", quality=92)
+        files = {"file": ("leaf.jpg", buf.getvalue(), "image/jpeg")}
+    else:
+        files = {"file": ("leaf.png", make_png(), "image/png")}
+    resp_post = client.post("/predict", files=files)
+    if resp_post.status_code == 422 and not leaf:
+        pytest.skip("no clean leaf available for the diagnose path")
     resp = client.get("/history?limit=5")
     assert resp.status_code == 200
     body = resp.json()

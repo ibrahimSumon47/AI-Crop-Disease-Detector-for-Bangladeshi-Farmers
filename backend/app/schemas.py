@@ -65,6 +65,15 @@ class PredictionResponse(BaseModel):
             "the farmer to retake a proper leaf close-up in good light."
         ),
     )
+    photo_warnings: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Bangla photo-quality notes (blurry shot, too dark) detected on the "
+            "upload before diagnosis. Advisory only — the farmer still gets a "
+            "diagnosis, plus advice on how to take a better photo. Empty when "
+            "the image quality is fine."
+        ),
+    )
     scan_id: int | None = Field(None, description="DB id of the saved scan row")
     created_at: datetime
 

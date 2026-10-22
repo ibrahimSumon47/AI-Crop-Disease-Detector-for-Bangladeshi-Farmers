@@ -50,6 +50,11 @@ async def predict_leaf(
     if not leaf_ok:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, leaf_reason)
 
+    # Advisory photo-quality notes (blur/dark). Not blocking: bad camera
+    # photos still get a full diagnosis, the response just carries Bangla
+    # notes on how to take a better shot.
+    photo_warnings = plant_guard.photo_warnings(img)
+
     batch = preprocess(img)
 
     top3 = inference.predict_top3(batch)
@@ -91,6 +96,7 @@ async def predict_leaf(
         advice=advice,
         family_note=family_note,
         crop_unclear=crop_unclear,
+        photo_warnings=photo_warnings,
         scan_id=scan.id,
         created_at=scan.created_at,
     )

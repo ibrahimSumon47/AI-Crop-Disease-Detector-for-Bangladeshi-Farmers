@@ -10,7 +10,9 @@ export interface PredictionItem {
   rank: number;
   class_name: string;
   class_name_bn: string;
-  crop: "rice" | "potato" | "tomato";
+  // The model now covers 11 crops (see backend/app/data/labels.json);
+  // this stays a plain string so new crops do not break the UI.
+  crop: string;
   confidence: Confidence;
 }
 
@@ -35,6 +37,8 @@ export interface PredictionResponse {
   advice: Advice;
   /** Present when the model is torn between the same disease on potato vs tomato. */
   family_note: string | null;
+  /** Bangla photo-quality notes (blurry / too dark). Advisory only. */
+  photo_warnings?: string[];
   /** True when even the top-1 is below 0.25 — the crop itself is a guess. */
   crop_unclear: boolean;
   scan_id: number | null;
