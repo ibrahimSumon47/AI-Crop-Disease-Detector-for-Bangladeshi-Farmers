@@ -143,8 +143,9 @@ Written in plain language for everyone (farmers, reviewers, developers):
 8. **Some advice may overlap real pesticide regulation** — doses/products in drafts follow
    standard practice text but must be locally verified before commercial use.
 9. **Needs internet.** Photos are sent to the server; there is no offline on-device model.
-10. **Upload limits:** JPG/PNG, max 5 MB, minimum 64×64 px — anything else is rejected
-    with a clear message.
+10. **Upload limits:** JPG/PNG, max 5 MB (4 MB on the Vercel deployment, because the
+    platform caps request bodies at about 4.5 MB), minimum 64×64 px — anything else is
+    rejected with a clear message.
 11. **Serverless deployment quirks:** after ~15 min idle the backend cold-starts (first
     scan is slower), and scan history uses a ephemeral SQLite file that resets on
     redeploy.
@@ -367,13 +368,14 @@ Deployed on **one free Vercel project** (frontend + backend + model together):
 1. Import the repo at Vercel → configuration lives in [vercel.json](vercel.json)
    (Vercel *Services* mode: `web` service = `frontend/`, `api` service = Python function).
 2. Environment variables: `NEXT_PUBLIC_BACKEND_URL=/api`, `DATABASE_URL=sqlite:////tmp/scans.db`,
-   `CONFIDENCE_THRESHOLD` (see [.env.example](.env.example)), `MAX_UPLOAD_MB=4`.
+   `CONFIDENCE_THRESHOLD` (see [.env.example](.env.example)), `MAX_UPLOAD_MB=4`
+   (the app default is 5 MB; Vercel caps request bodies at about 4.5 MB).
 3. Step-by-step (including the Render/HF Spaces alternative backend):
    **[docs/deploy.md](docs/deploy.md)**.
 
 **Free-tier honesty:** serverless cold starts after ~15 min idle (first scan is slower);
 scan history uses `/tmp` SQLite and resets on redeploys; uploads capped at 4 MB in that
-deployment.
+deployment (the app default is 5 MB).
 
 ---
 
