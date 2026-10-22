@@ -65,13 +65,19 @@ def predict_top3(batch: np.ndarray) -> list[dict]:
     if _session is None or not _labels:
         raise RuntimeError("Model not loaded — call load_model() first.")
 
-    output = _session.run(None, {_session.get_inputs()[0].name: batch})[0][0]
+    raw = _session.run(None, {_session.get_inputs()[0].name: batch})[0][0]
 
-    # Numerical softmax (the Keras export already applies softmax, but onnxruntime
-    # occasionally outputs logits depending on export flags; softmax of softmax
-    # output changes values negligibly, so we compute it defensively).
-    exps = np.exp(output - output.max())
-    probs = exps / exps.sum()
+    # The Keras graph ends in an explicit Dense(softmax), so the ONNX output
+    # is ALREADY a probability vector (non-negative and summing to ~1.0).
+    # We must NOT softmax it again: re-softmaxing a 61-way probability
+    # vector crushes a 0.82 into ~0.03, which made every live diagnosis
+    # look uncertain while leaving the argmax (accuracy) unchanged.
+    # Only fall back to a real softmax if the export returned logits.
+    if raw.min() >= 0.0 and abs(float(raw.sum()) - 1.0) < 1e-2:
+        probs = raw.astype(np.float32)
+    else:
+        exps = np.exp(raw - raw.max())
+        probs = exps / exps.sum()
 
     top_idx = probs.argsort()[::-1][:3]
     return [
