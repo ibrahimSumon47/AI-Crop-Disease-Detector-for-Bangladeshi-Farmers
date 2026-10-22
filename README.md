@@ -11,6 +11,8 @@ pesticide recommendation can destroy a farmer's season.
 
 🌐 **Live app:** https://ai-crop-disease-detector-for-bangla-three.vercel.app
 
+📄 **Final report:** [Google Doc](https://docs.google.com/document/d/11zN7BeN2_IuY7lCWhcDZbPiHaKozekWhigu4KsMh0Cc/edit?usp=sharing) · [DOCX in repo](docs/Final_Report.docx)
+
 | Home (upload) | Result (honest "low confidence" state, with best-guess advice) |
 | --- | --- |
 | ![Upload screen](docs/screenshots/upload_screen.png) | ![Result screen](docs/screenshots/result_uncertain.png) |
