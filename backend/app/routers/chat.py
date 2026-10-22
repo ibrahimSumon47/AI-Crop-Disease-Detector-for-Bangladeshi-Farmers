@@ -79,6 +79,10 @@ SYSTEM_PROMPT = (
 
 @router.post("", response_model=ChatResponse)
 async def chat(req: ChatRequest) -> ChatResponse:
+    # Serverless cold starts may skip the app lifespan, so load the curated
+    # guidelines on demand; otherwise the fallback has no data to answer from.
+    if not gl.get_all():
+        gl.load_guidelines()
     last = req.messages[-1].content.strip()
     if not last:
         return ChatResponse(reply="কী জানতে চান? রোগ, চিকিৎসা বা অ্যাপ ব্যবহার নিয়ে লিখুন।")
