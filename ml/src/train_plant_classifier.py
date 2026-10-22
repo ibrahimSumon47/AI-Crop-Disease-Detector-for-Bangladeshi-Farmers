@@ -251,33 +251,89 @@ def synth_negative(rng: np.random.Generator) -> list[Image.Image]:
     return imgs
 
 
-def background_crop(rng: np.random.Generator, source_dirs: list[Path]) -> Image.Image | None:
-    """Hard negative: a random window of a real image that is mostly background."""
-    for _ in range(3):
+def background_crops(rng: np.random.Generator, source_dirs: list[Path], mode: str = "leaffree",
+                     need: int = 1, max_tries: int = 2000) -> list[Image.Image]:
+    """Hard negatives: windows of real dataset images cut from plant photos.
+
+    mode="leaffree": nearly leaf-free background (soil, sky, walls…).
+    mode="partial":  windows containing a small REAL leaf edge (2–15% ExG
+    coverage) — mimics a distant shot where the leaf only touches the
+    corner of the frame, the hardest junk we were letting slip through.
+
+    Performance: ONE source image is opened per attempt and up to 6 windows
+    of it are tested before moving on (image open was the bottleneck).
+    """
+    lo, hi = (0.02, 0.15) if mode == "partial" else (0.0, 0.06)
+    out: list[Image.Image] = []
+    for _ in range(max_tries):
         src = rng.choice(source_dirs)
         files = list(src.glob("*.jpg")) or list(src.glob("*.png")) or list(src.glob("*.JPG"))
         if not files:
             continue
-        p = rng.choice(files)
         try:
-            img = Image.open(p).convert("RGB")
+            img = Image.open(rng.choice(files)).convert("RGB")
         except Exception:
             continue
         img.thumbnail((320, 320))
         w, h = img.size
         if w < 64 or h < 64:
             continue
-        cw, ch = rng.integers(int(w * 0.3), int(w * 0.7)), rng.integers(int(h * 0.3), int(h * 0.7))
-        x0, y0 = rng.integers(0, w - cw), rng.integers(0, h - ch)
-        crop = img.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch)))
-        small = crop.convert("RGB")
-        small.thumbnail((128, 128))
-        arr = np.asarray(small, dtype=np.float32)
-        g = arr[..., 1]
-        exg = 2.0 * g - arr[..., 0] - arr[..., 2]
-        if ((exg > 25.0) & (g > 60.0)).mean() < 0.06:  # must be nearly leaf-free
-            return small
-    return None
+        for _ in range(6):
+            cw, ch = rng.integers(int(w * 0.3), int(w * 0.7)), rng.integers(int(h * 0.3), int(h * 0.7))
+            x0, y0 = rng.integers(0, w - cw), rng.integers(0, h - ch)
+            crop = img.crop((int(x0), int(y0), int(x0 + cw), int(y0 + ch)))
+            small = crop.convert("RGB")
+            small.thumbnail((128, 128))
+            arr = np.asarray(small, dtype=np.float32)
+            g = arr[..., 1]
+            exg = 2.0 * g - arr[..., 0] - arr[..., 2]
+            frac = ((exg > 25.0) & (g > 60.0)).mean()
+            if lo <= frac < hi:
+                out.append(small)
+                if len(out) >= need:
+                    img.close()
+                    return out
+                break
+        img.close()
+    return out
+
+
+def paste_partial(rng: np.random.Generator, leaffree: list[Image.Image], leaf_dirs: list[Path],
+                  need: int) -> list[Image.Image]:
+    """Guaranteed partial-leaf negatives: a small piece of REAL leaf tissue
+    pasted onto a leaf-free real background (double-jpeg'd like a phone shot
+    via degrade in collect). Used only if raw partial-leaf windows are too
+    rare in the dataset to fill the quota."""
+    out: list[Image.Image] = []
+    if not leaffree:
+        return out
+    leaf_files = [p for _ in range(1) for d in (leaf_dirs * 1) for p in d.glob("*.jpg")]
+    for i in range(need * 4):
+        if len(out) >= need or not leaf_files or not leaffree:
+            break
+        try:
+            src = Image.open(leaf_files[rng.integers(0, len(leaf_files))]).convert("RGB")
+        except Exception:
+            continue
+        src.thumbnail((160, 160))
+        w, h = src.size
+        side = max(8, int(min(w, h) * 0.18))
+        patch = src.crop(((w - side) // 2, (h - side) // 2, (w + side) // 2, (h + side) // 2))
+        arrp = np.asarray(patch, dtype=np.float32)
+        g = arrp[..., 1]
+        exg = 2.0 * g - arrp[..., 0] - arrp[..., 2]
+        if ((exg > 25) & (g > 60)).mean() < 0.35:  # patch must be leaf-like
+            continue
+        bg = leaffree[rng.integers(0, len(leaffree))].copy()
+        bwb, bhb = bg.size
+        if patch.size[0] >= bwb or patch.size[1] >= bhb:
+            continue
+        ang = float(rng.uniform(0, 360))
+        patch = patch.rotate(ang, expand=True)
+        x0, y0 = rng.integers(0, bwb - patch.size[0]), rng.integers(0, bhb - patch.size[1])
+        bg.paste(patch, (int(x0), int(y0)))
+        out.append(bg)
+    return out
 
 
 # dataset ---------------------------------------------------------------
@@ -309,25 +365,42 @@ def collect(max_pos: int, max_neg: int) -> tuple[list, list]:
     pos_imgs = train_pos
     # NOTE: val_pos handled separately below (no leakage)
 
-    # negatives
+    # negatives: 2/3 synthetic photo-junk, 1/3 harder real background crops
+    # (leaf-free windows + partial-leaf edge windows, some camera-degraded)
     n_synth = max(8, max(0, max_neg))
     synth = []
-    for _ in range(max_neg - max_neg // 6):
+    for _ in range(max_neg - max_neg // 3):
         synth.extend(synth_negative(rng))
     bg_dirs = [d for d in class_dirs]
-    bg = []
-    while len(bg) < max_neg // 6:
-        c = background_crop(rng, bg_dirs)
-        if c is not None:
-            bg.append(("bg_crop", c))
+    bg_target = max_neg // 3
+    print(f"[plant-clf] generating {bg_target} background-crop negatives…", flush=True)
+    leaffree = background_crops(rng, bg_dirs, "leaffree", need=int(bg_target * 0.55), max_tries=bg_target * 40)
+    print(f"[plant-clf] leaffree crops: {len(leaffree)}", flush=True)
+    partial_need = bg_target - len(leaffree)
+    partial = background_crops(rng, bg_dirs, "partial", need=partial_need, max_tries=bg_target * 200)
+    print(f"[plant-clf] partial-leaf windows found in the wild: {len(partial)}", flush=True)
+    if len(partial) < partial_need:
+        partial += paste_partial(rng, leaffree, bg_dirs, partial_need - len(partial))
+    bg = [("bg_leaffree", c) for c in leaffree] + [("bg_partial", c) for c in partial]
+    print(f"[plant-clf] background crops: {len(bg)}", flush=True)
     if USER_NEG.exists():
         potato = Image.open(USER_NEG).convert("RGB")
         for v in augment(potato):
             bg.append(("user_potato", v))  # real user-reported negative
 
+    # val negatives: synthetic junk PLUS held-out background crops so the
+    # reported nonleaf_detection actually reflects the hard cases, not only
+    # the easy synthetic ones.
+    val_bg: list[tuple[str, Image.Image]] = []
+    lb = background_crops(rng, bg_dirs, "leaffree", need=100, max_tries=10_000)
+    vb = background_crops(rng, bg_dirs, "partial", need=120, max_tries=20_000)
+    if len(vb) < 120:
+        vb += paste_partial(rng, lb, bg_dirs, 120 - len(vb))
+    val_bg = [("val_bg", c) for c in lb + vb]
+
     train_neg = synth[: max_neg - len(bg)]
     neg_imgs = train_neg + bg
-    return pos_imgs, neg_imgs, val_pos
+    return pos_imgs, neg_imgs, val_pos, val_bg
 
 
 def evaluate(clf, X, y, tag: str, threshold: float, report: dict) -> None:
@@ -359,14 +432,17 @@ def main() -> None:
     args = ap.parse_args()
 
     t0 = time.time()
-    train_pos, train_neg, val_pos = collect(args.max_positives, args.max_negatives)
+    train_pos, train_neg, val_pos, val_bg = collect(args.max_positives, args.max_negatives)
 
     def feats_of(imgs):
         rows, labels = [], []
-        labeled = [(cls, Image.open(f).convert("RGB")) for cls, f in imgs]
-        for cls, im in labeled:
-            rows.append(features(im))
+        for i, (cls, f) in enumerate(imgs):
+            im = Image.open(f).convert("RGB")  # one at a time: holding every
+            rows.append(features(im))          # full-size copy at once OOMed
+            im.close()
             labels.append(1)
+            if (i + 1) % 2000 == 0:
+                print(f"[plant-clf] features {i + 1}/{len(imgs)} ({time.time() - t0:.0f}s)", flush=True)
         return rows, labels
 
     # CRITICAL: the gate must let bad-camera photos THROUGH. Without these
@@ -400,9 +476,13 @@ def main() -> None:
     Xn = [features(im) for im in Xn_raw]
     yn = [0] * len(Xn)
 
-    # val set: real TEST-split leaves (positives) + fully synthetic negatives + user photo
+    # val set: real TEST-split leaves (positives) + synthetic junk + held-out
+    # background crops + user photo as negatives (no train-split leakage)
     Xv_p, yv_p = feats_of(val_pos)
     Xv_n, yv_n = [features(synth_negative(np.random.default_rng(SEED))[-1]) for _ in range(max(200, args.max_negatives // 20))], [0] * max(200, args.max_negatives // 20)
+    for _, im in val_bg:
+        Xv_n.append(features(im))
+        yv_n.append(0)
     if USER_NEG.exists():
         Xv_n.append(features(Image.open(USER_NEG).convert("RGB")))
         yv_n.append(0)
@@ -430,7 +510,7 @@ def main() -> None:
         "features": len(FEAT_NAMES),
         "n_train": int(X.shape[0]),
         "trained_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "negatives_description": "synthetic photo-junk (flat/noise/gradient/pattern/document/product-blob/dark) + real-dataset background crops + user-submitted non-leaf photo",
+        "negatives_description": "synthetic photo-junk (flat/noise/gradient/pattern/document/product-blob/dark) + harder real-dataset background crops (leaf-free AND partial-leaf edge windows, 30% camera-degraded) + user-submitted non-leaf photo",
         "limitations": "no downloaded real-photo negative dataset was available; complex real non-plant scenes (people, landscapes) are NOT in the negative set",
     }
     Xv = np.asarray(Xv_p + Xv_n, dtype=np.float64)

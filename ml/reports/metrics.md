@@ -1,6 +1,33 @@
 # Model Metrics (test split)
 
-*Model:* `best_model.keras` 
+*Model:* `best_model.keras`
+
+## Gate end-to-end review (before/after retrain, 2026-10-22)
+
+Full end-to-end evaluation of the main model (`best_model.keras`) on the
+real test split **with** the plant gate in front of it, re-run with the
+gate retrained on harder negatives (1,350 genuine partial-leaf edge
+windows from the wild + leaf-free background crops, 30% camera-degraded).
+
+Measured by `ml/src/evaluate_gate_e2e.py` → `gate_e2e_report.json`
+(tags `before_full`/`after_full`, seed 4242, 14,641 test leaves + 300 junk).
+
+| metric | before retrain | after retrain |
+| --- | --- | --- |
+| gate leaf pass rate (test split) | 98.91% | 98.58% |
+| gate leaf refusals | 159 / 14,641 | 208 / 14,641 |
+| junk pass rate (into the honest low-conf screen) | 28.33% | **14.67%** |
+| top-1 accuracy, all leaves | 44.07% | 43.83% |
+| top-1 accuracy, gate-passed leaves | 44.56% | 44.46% |
+
+Takeaway: junk that slips through the gate is nearly halved (28.3% →
+14.7%) for a cost of only ~0.33 pp more false refusals on true leaves
+(208 vs 159 on 14,641) and ~0.24 pp top-1. A smaller, non-full-split
+sample (244 leaves / 300 junk, tags `before`/`after`) shows the same
+pattern: junk 30.7% → 14.7%.
+
+---
+
 *Data:* `data/processed/test`  (14641 images)  
 *Generated:* 2026-10-22T08:02:01+00:00
 

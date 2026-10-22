@@ -70,9 +70,16 @@ def main() -> int:
         negs.extend(synth_negative(neg_rng))
     negs = negs[:want_synth]
     while len(negs) < want_synth + want_bg:
-        c = background_crop(neg_rng, test_dirs)
-        if c is not None:
-            negs.append(c)
+        # evaluate against the same harder negatives the gate is trained on:
+        # 40% partial-leaf edge windows + 30% camera-degraded variants
+        mode = "leaffree" if len(negs) % 5 < 3 else "partial"
+        c = background_crop(neg_rng, test_dirs, mode=mode)
+        if c is None:
+            continue
+        if mode == "leaffree" and neg_rng.random() < 0.3:
+            from train_plant_classifier import degrade
+            c = degrade(c, float(neg_rng.uniform(0.4, 0.95)), float(neg_rng.uniform(0.5, 4.0)), int(neg_rng.integers(40, 88)))
+        negs.append(c)
     if USER_NEG.exists():
         for v in augment(Image.open(USER_NEG).convert("RGB")):
             negs.append(v)
@@ -113,7 +120,7 @@ def main() -> int:
     e2e = {
         "leaf_pass_rate": float(sum(ok for ok, _ in e2e_pos) / len(e2e_pos)),
         "junk_pass_rate": float(sum(ok for ok, _ in e2e_neg) / len(e2e_neg)),
-        "note": "junk passes land on the honest low-confidence/crop-unclear path",
+        "note": "junk that passes land on the honest low-confidence/crop-unclear path",,
     }
     print(f"end-to-end serving gate: leaf-pass {e2e['leaf_pass_rate'] * 100:.1f}%  "
           f"junk-pass {e2e['junk_pass_rate'] * 100:.1f}% (-> honest low-confidence path)")
@@ -123,7 +130,7 @@ def main() -> int:
     report["serving_holdout"] = {
         "evaluated_at": __import__("time").strftime("%Y-%m-%dT%H:%M:%S"),
         "positives_n": int(len(pos_probs)),
-        "negatives": "synthetic (seed 4242) + test-split background crops + user photo",
+        "negatives": "synthetic (seed 4242) + harder test-split background crops (leaf-free + partial-leaf edge, 30% degraded) + user photo",
         "pos_probs_p1": float(np.percentile(pos_probs, 1)),
         "pos_probs_p5": float(np.percentile(pos_probs, 5)),
         "neg_probs_p99": float(np.percentile(neg_probs, 99)),

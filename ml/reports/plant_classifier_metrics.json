@@ -1,74 +1,27 @@
 {
   "threshold": 0.5,
   "features": 19,
-  "n_train": 14387,
-  "trained_at": "2026-10-22T17:06:57",
-  "negatives_description": "synthetic photo-junk (flat/noise/gradient/pattern/document/product-blob/dark) + real-dataset background crops + user-submitted non-leaf photo",
+  "n_train": 21282,
+  "trained_at": "2026-10-22T18:35:59",
+  "negatives_description": "synthetic photo-junk (flat/noise/gradient/pattern/document/product-blob/dark) + harder real-dataset background crops (leaf-free AND partial-leaf edge windows, 30% camera-degraded) + user-submitted non-leaf photo",
   "limitations": "no downloaded real-photo negative dataset was available; complex real non-plant scenes (people, landscapes) are NOT in the negative set",
   "holdout_val": {
-    "n": 911,
-    "leaf_recall": 0.9754098360655737,
-    "nonleaf_detection": 1.0,
-    "accuracy": 0.9835345773874863,
-    "acc": 0.9835345773874863,
-    "_leaf_missed_n": 15,
-    "_nonleaf_passed_n": 0
+    "n": 1281,
+    "leaf_recall": 0.9573770491803278,
+    "nonleaf_detection": 0.9523099850968704,
+    "accuracy": 0.9547228727556596,
+    "acc": 0.9547228727556596,
+    "_leaf_missed_n": 26,
+    "_nonleaf_passed_n": 32
   },
   "train_insample": {
-    "n": 14387,
-    "leaf_recall": 0.9935614641707404,
-    "nonleaf_detection": 0.9815,
-    "accuracy": 0.9885313129908946,
-    "acc": 0.9885313129908946,
-    "_leaf_missed_n": 54,
-    "_nonleaf_passed_n": 111
+    "n": 21282,
+    "leaf_recall": 0.9815990880964013,
+    "nonleaf_detection": 0.9703333333333334,
+    "accuracy": 0.9768348839394794,
+    "acc": 0.9768348839394794,
+    "_leaf_missed_n": 226,
+    "_nonleaf_passed_n": 267
   },
-  "onnx_parity_max_abs_diff": 8.129299133852186e-08,
-  "serving_holdout": {
-    "evaluated_at": "2026-10-22T17:14:15",
-    "positives_n": 400,
-    "negatives": "synthetic (seed 4242) + test-split background crops + user photo",
-    "pos_probs_p1": 0.38588901579380036,
-    "pos_probs_p5": 0.6272779047489166,
-    "neg_probs_p99": 0.81808123588562,
-    "threshold_sweep": {
-      "0.05": {
-        "leaf_reject_rate": 0.0025,
-        "nonleaf_detection_rate": 0.8054187192118226
-      },
-      "0.1": {
-        "leaf_reject_rate": 0.0025,
-        "nonleaf_detection_rate": 0.8300492610837439
-      },
-      "0.2": {
-        "leaf_reject_rate": 0.005,
-        "nonleaf_detection_rate": 0.8645320197044335
-      },
-      "0.3": {
-        "leaf_reject_rate": 0.005,
-        "nonleaf_detection_rate": 0.8866995073891626
-      },
-      "0.35": {
-        "leaf_reject_rate": 0.0075,
-        "nonleaf_detection_rate": 0.9014778325123153
-      },
-      "0.4": {
-        "leaf_reject_rate": 0.0125,
-        "nonleaf_detection_rate": 0.9088669950738916
-      },
-      "0.5": {
-        "leaf_reject_rate": 0.03,
-        "nonleaf_detection_rate": 0.9310344827586207
-      },
-      "0.6": {
-        "leaf_reject_rate": 0.045,
-        "nonleaf_detection_rate": 0.9458128078817734
-      }
-    },
-    "serving_end_to_end": {
-      "leaf_pass_rate": 0.9925,
-      "junk_pass_rate": 0.14285714285714285,
-      "note": "junk passes land on the honest low-confidence/crop-unclear path"
-    }
-  }
+  "onnx_parity_max_abs_diff": 8.327431311183631e-08
 }
