@@ -31,7 +31,7 @@ if _ROOT not in sys.path:
 from fastapi import FastAPI  # noqa: E402
 
 from backend.app.db import init_db  # noqa: E402
-from backend.app.routers import history, predict  # noqa: E402
+from backend.app.routers import chat, history, predict  # noqa: E402
 from backend.app.services import guidelines, inference  # noqa: E402
 
 
@@ -53,6 +53,7 @@ app = FastAPI(
 )
 
 # Reuse the real routers — /api/predict + /api/history.
+app.include_router(chat.router, prefix="/api")
 app.include_router(history.router, prefix="/api")
 app.include_router(predict.router, prefix="/api")
 

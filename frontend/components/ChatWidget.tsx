@@ -34,7 +34,7 @@ export default function ChatWidget() {
     setInput("");
     setBusy(true);
     try {
-      const resp = await fetch(`/chat`, {
+      const resp = await fetch(`/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: next.map(({ role, content }) => ({ role, content })) }),
