@@ -1,73 +1,376 @@
 {
-  "n_classes": 11,
-  "input_size": [224, 224],
+  "n_classes": 61,
+  "input_size": [
+    224,
+    224
+  ],
   "labels": {
     "0": {
+      "class": "cauliflower_black_rot",
+      "en": "Cauliflower Black Rot",
+      "bn": "ফুলকপি — কালো পচা (Black Rot)",
+      "crop": "cauliflower"
+    },
+    "1": {
+      "class": "cauliflower_healthy",
+      "en": "Cauliflower - Healthy",
+      "bn": "ফুলকপি — সুস্থ পাতা",
+      "crop": "cauliflower"
+    },
+    "2": {
+      "class": "cauliflower_insect_holes",
+      "en": "Cauliflower Insect Holes",
+      "bn": "ফুলকপি — পোকার ছিদ্র",
+      "crop": "cauliflower"
+    },
+    "3": {
+      "class": "chilli_bacterial_spot",
+      "en": "Chilli Bacterial Spot",
+      "bn": "মরিচ — ব্যাকটেরিয়াল স্পট",
+      "crop": "chilli"
+    },
+    "4": {
+      "class": "chilli_cercospora_leaf_spot",
+      "en": "Chilli Cercospora Leaf Spot",
+      "bn": "মরিচ — সারকোস্পোরা পাতা দাগ",
+      "crop": "chilli"
+    },
+    "5": {
+      "class": "chilli_curl_virus",
+      "en": "Chilli Curl Virus",
+      "bn": "মরিচ — পাতা কোঁকড়ানো ভাইরাস",
+      "crop": "chilli"
+    },
+    "6": {
+      "class": "chilli_healthy",
+      "en": "Chilli - Healthy",
+      "bn": "মরিচ — সুস্থ পাতা",
+      "crop": "chilli"
+    },
+    "7": {
+      "class": "chilli_nutrient_deficiency",
+      "en": "Chilli Nutrient Deficiency",
+      "bn": "মরিচ — পুষ্টি উপাদানের ঘাটতি",
+      "crop": "chilli"
+    },
+    "8": {
+      "class": "chilli_white_spot",
+      "en": "Chilli White Spot",
+      "bn": "মরিচ — সাদা দাগ",
+      "crop": "chilli"
+    },
+    "9": {
+      "class": "cucumber_anthracnose",
+      "en": "Cucumber Anthracnose",
+      "bn": "শসা — অ্যানথ্রাকনোজ",
+      "crop": "cucumber"
+    },
+    "10": {
+      "class": "cucumber_bacterial_wilt",
+      "en": "Cucumber Bacterial Wilt",
+      "bn": "শসা — ব্যাকটেরিয়াল উইল্ট",
+      "crop": "cucumber"
+    },
+    "11": {
+      "class": "cucumber_belly_rot",
+      "en": "Cucumber Belly Rot",
+      "bn": "শসা — বেলি রট (ফল পচা)",
+      "crop": "cucumber"
+    },
+    "12": {
+      "class": "cucumber_downy_mildew",
+      "en": "Cucumber Downy Mildew",
+      "bn": "শসা — ডাউনি মিলডিউ",
+      "crop": "cucumber"
+    },
+    "13": {
+      "class": "cucumber_gummy_stem_blight",
+      "en": "Cucumber Gummy Stem Blight",
+      "bn": "শসা — গামি স্টেম ব্লাইট",
+      "crop": "cucumber"
+    },
+    "14": {
+      "class": "cucumber_healthy",
+      "en": "Cucumber - Healthy",
+      "bn": "শসা — সুস্থ পাতা",
+      "crop": "cucumber"
+    },
+    "15": {
+      "class": "cucumber_pythium_fruit_rot",
+      "en": "Cucumber Pythium Fruit Rot",
+      "bn": "শসা — পাইথিয়াম ফল পচা",
+      "crop": "cucumber"
+    },
+    "16": {
+      "class": "grape_bacterial_leaf_spot",
+      "en": "Grape Bacterial Leaf Spot",
+      "bn": "আঙুর — ব্যাকটেরিয়াল পাতা দাগ",
+      "crop": "grape"
+    },
+    "17": {
+      "class": "grape_black_rot",
+      "en": "Grape Black Rot",
+      "bn": "আঙুর — কালো পচা (Black Rot)",
+      "crop": "grape"
+    },
+    "18": {
+      "class": "grape_downy_mildew",
+      "en": "Grape Downy Mildew",
+      "bn": "আঙুর — ডাউনি মিলডিউ",
+      "crop": "grape"
+    },
+    "19": {
+      "class": "grape_esca",
+      "en": "Grape Esca",
+      "bn": "আঙুর — এসকা (Esca)",
+      "crop": "grape"
+    },
+    "20": {
+      "class": "grape_healthy",
+      "en": "Grape - Healthy",
+      "bn": "আঙুর — সুস্থ পাতা",
+      "crop": "grape"
+    },
+    "21": {
+      "class": "grape_leaf_blight",
+      "en": "Grape Leaf Blight",
+      "bn": "আঙুর — পাতা পোড়া (Leaf Blight)",
+      "crop": "grape"
+    },
+    "22": {
+      "class": "grape_powdery_mildew",
+      "en": "Grape Powdery Mildew",
+      "bn": "আঙুর — পাউডারি মিলডিউ",
+      "crop": "grape"
+    },
+    "23": {
+      "class": "maize_common_rust",
+      "en": "Maize Common Rust",
+      "bn": "ভুট্টা — সাধারণ মরিচা (Common Rust)",
+      "crop": "maize"
+    },
+    "24": {
+      "class": "maize_gray_leaf_spot",
+      "en": "Maize Gray Leaf Spot",
+      "bn": "ভুট্টা — ধূসর পাতা দাগ (Gray Leaf Spot)",
+      "crop": "maize"
+    },
+    "25": {
+      "class": "maize_healthy",
+      "en": "Maize - Healthy",
+      "bn": "ভুট্টা — সুস্থ পাতা",
+      "crop": "maize"
+    },
+    "26": {
+      "class": "maize_lethal_necrosis",
+      "en": "Maize Lethal Necrosis",
+      "bn": "ভুট্টা — লিথাল নেক্রোসিস (মারাত্মক পাতা মৃত্যু)",
+      "crop": "maize"
+    },
+    "27": {
+      "class": "maize_northern_leaf_blight",
+      "en": "Maize Northern Leaf Blight",
+      "bn": "ভুট্টা — উত্তর পাতা পোড়া (Northern Leaf Blight)",
+      "crop": "maize"
+    },
+    "28": {
+      "class": "maize_streak_virus",
+      "en": "Maize Streak Virus",
+      "bn": "ভুট্টা — স্ট্রিক ভাইরাস",
+      "crop": "maize"
+    },
+    "29": {
+      "class": "mango_anthracnose",
+      "en": "Mango Anthracnose",
+      "bn": "আম — অ্যানথ্রাকনোজ",
+      "crop": "mango"
+    },
+    "30": {
+      "class": "mango_bacterial_canker",
+      "en": "Mango Bacterial Canker",
+      "bn": "আম — ব্যাকটেরিয়াল ক্যানসার",
+      "crop": "mango"
+    },
+    "31": {
+      "class": "mango_cutting_weevil",
+      "en": "Mango Cutting Weevil",
+      "bn": "আম — কাটিং উইভিল পোকা",
+      "crop": "mango"
+    },
+    "32": {
+      "class": "mango_die_back",
+      "en": "Mango Die Back",
+      "bn": "আম — ডাই-ব্যাক (ডগা শুকিয়ে যাওয়া)",
+      "crop": "mango"
+    },
+    "33": {
+      "class": "mango_gall_midge",
+      "en": "Mango Gall Midge",
+      "bn": "আম — গল মিজ (পাতা ফোলা)",
+      "crop": "mango"
+    },
+    "34": {
+      "class": "mango_healthy",
+      "en": "Mango - Healthy",
+      "bn": "আম — সুস্থ পাতা",
+      "crop": "mango"
+    },
+    "35": {
+      "class": "mango_powdery_mildew",
+      "en": "Mango Powdery Mildew",
+      "bn": "আম — পাউডারি মিলডিউ",
+      "crop": "mango"
+    },
+    "36": {
+      "class": "mango_sooty_mould",
+      "en": "Mango Sooty Mould",
+      "bn": "আম — সুটি ছাঁচ (কালো আস্তরণ)",
+      "crop": "mango"
+    },
+    "37": {
+      "class": "okra_alternaria_leaf_spot",
+      "en": "Okra Alternaria Leaf Spot",
+      "bn": "ঢেঁড়স — অলটারনেরিয়া পাতা দাগ",
+      "crop": "okra"
+    },
+    "38": {
+      "class": "okra_cercospora_leaf_spot",
+      "en": "Okra Cercospora Leaf Spot",
+      "bn": "ঢেঁড়স — সারকোস্পোরা পাতা দাগ",
+      "crop": "okra"
+    },
+    "39": {
+      "class": "okra_downy_mildew",
+      "en": "Okra Downy Mildew",
+      "bn": "ঢেঁড়স — ডাউনি মিলডিউ",
+      "crop": "okra"
+    },
+    "40": {
+      "class": "okra_healthy",
+      "en": "Okra - Healthy",
+      "bn": "ঢেঁড়স — সুস্থ পাতা",
+      "crop": "okra"
+    },
+    "41": {
+      "class": "okra_leaf_curl_virus",
+      "en": "Okra Leaf Curl Virus",
+      "bn": "ঢেঁড়স — পাতা কোঁকড়ানো ভাইরাস",
+      "crop": "okra"
+    },
+    "42": {
+      "class": "okra_phyllosticta_leaf_spot",
+      "en": "Okra Phyllosticta Leaf Spot",
+      "bn": "ঢেঁড়স — ফাইলোস্টিক্টা পাতা দাগ",
+      "crop": "okra"
+    },
+    "43": {
+      "class": "papaya_anthracnose",
+      "en": "Papaya Anthracnose",
+      "bn": "পেঁপে — অ্যানথ্রাকনোজ",
+      "crop": "papaya"
+    },
+    "44": {
+      "class": "papaya_bacterial_spot",
+      "en": "Papaya Bacterial Spot",
+      "bn": "পেঁপে — ব্যাকটেরিয়াল স্পট",
+      "crop": "papaya"
+    },
+    "45": {
+      "class": "papaya_curl",
+      "en": "Papaya Curl",
+      "bn": "পেঁপে — পাতা কোঁকড়ানো",
+      "crop": "papaya"
+    },
+    "46": {
+      "class": "papaya_healthy",
+      "en": "Papaya - Healthy",
+      "bn": "পেঁপে — সুস্থ পাতা",
+      "crop": "papaya"
+    },
+    "47": {
+      "class": "papaya_ring_spot",
+      "en": "Papaya Ring Spot",
+      "bn": "পেঁপে — রিং স্পট ভাইরাস",
+      "crop": "papaya"
+    },
+    "48": {
       "class": "potato_early_blight",
       "en": "Potato Early Blight",
       "bn": "আলু — আগাম পাতা পোড়া (Early Blight)",
       "crop": "potato"
     },
-    "1": {
+    "49": {
       "class": "potato_healthy",
       "en": "Potato - Healthy",
       "bn": "আলু — সুস্থ পাতা",
       "crop": "potato"
     },
-    "2": {
+    "50": {
       "class": "potato_late_blight",
       "en": "Potato Late Blight",
       "bn": "আলু — অনাগাম পাতা পোড়া (Late Blight)",
       "crop": "potato"
     },
-    "3": {
+    "51": {
+      "class": "rice_bacterial_leaf_blight",
+      "en": "Rice Bacterial Leaf Blight",
+      "bn": "ধান — ব্যাকটেরিয়াল লিফ ব্লাইট",
+      "crop": "rice"
+    },
+    "52": {
       "class": "rice_blast",
       "en": "Rice Blast",
       "bn": "ধান — ব্লাস্ট রোগ",
       "crop": "rice"
     },
-    "4": {
+    "53": {
       "class": "rice_brown_spot",
       "en": "Rice Brown Spot",
       "bn": "ধান — বাদামি দাগ",
       "crop": "rice"
     },
-    "5": {
+    "54": {
       "class": "rice_healthy",
       "en": "Rice - Healthy",
       "bn": "ধান — সুস্থ পাতা",
       "crop": "rice"
     },
-    "6": {
+    "55": {
+      "class": "rice_tungro",
+      "en": "Rice Tungro",
+      "bn": "ধান — টুংরো রোগ",
+      "crop": "rice"
+    },
+    "56": {
       "class": "tomato_bacterial_spot",
       "en": "Tomato Bacterial Spot",
       "bn": "টম্যাটো — ব্যাকটেরিয়াল স্পট",
       "crop": "tomato"
     },
-    "7": {
+    "57": {
       "class": "tomato_early_blight",
       "en": "Tomato Early Blight",
       "bn": "টম্যাটো — আগাম পাতা পোড়া (Early Blight)",
       "crop": "tomato"
     },
-    "8": {
+    "58": {
       "class": "tomato_healthy",
       "en": "Tomato - Healthy",
       "bn": "টম্যাটো — সুস্থ পাতা",
       "crop": "tomato"
     },
-    "9": {
+    "59": {
       "class": "tomato_late_blight",
       "en": "Tomato Late Blight",
       "bn": "টম্যাটো — অনাগাম পাতা পোড়া (Late Blight)",
       "crop": "tomato"
     },
-    "10": {
+    "60": {
       "class": "tomato_leaf_mold",
       "en": "Tomato Leaf Mold",
       "bn": "টম্যাটো — লিফ মোল্ড",
       "crop": "tomato"
     }
   },
-  "note": "Generated in the MODEL's true output order (verified against ml/reports/history.json 'class_names', which train.py wrote from the actual training data). The 2 canonical classes without training data (rice_bacterial_leaf_blight, rice_tungro) have no output index. Cross-check: ml/reports/metrics.md lists classes in the same order."
+  "note": "Generated by ml/src/export_onnx.py in the model's trained output order (ml/reports/class_order.json); names from ml/src/classes.py."
 }

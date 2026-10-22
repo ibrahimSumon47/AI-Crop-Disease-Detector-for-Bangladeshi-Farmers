@@ -70,10 +70,11 @@ MIN_CLASS_COUNT = 4
 ALIAS_MAP: dict[str, list[str]] = {
     # --- rice ---
     "rice_bacterial_leaf_blight": [
-        "bacterial_leaf_blight", "bacterial leaf blight", "bacterialblight",
+        "rice_bacterial_leaf_blight", "bacterial_leaf_blight",
+        "bacterial leaf blight", "bacterialblight",
         "bacterial_leaf_blight_disease", "blb",
     ],
-    "rice_brown_spot": ["brown_spot", "brown spot", "brownspot"],
+    "rice_brown_spot": ["rice_brown_spot", "brown_spot", "brown spot", "brownspot"],
     "rice_blast": ["blast", "leaf_blast", "leaf blast", "leafblast", "rice_blast"],
     "rice_tungro": ["tungro", "rice_tungro"],
     "rice_healthy": ["healthy", "healthy_leaf", "rice_healthy", "healty"],
@@ -87,13 +88,75 @@ ALIAS_MAP: dict[str, list[str]] = {
     "tomato_late_blight": ["tomato___late_blight", "tomato_late_blight"],
     "tomato_leaf_mold": ["tomato___leaf_mold", "tomato_leaf_mold"],
     "tomato_healthy": ["tomato___healthy", "tomato_healthy"],
+    # --- chilli (Bangladesh chilli dataset, Mendeley w9mr3vf526s/ field photos) ---
+    "chilli_bacterial_spot": ["chilli_bacterial_spot", "bacterial spot", "chilli_bacterialspot"],
+    "chilli_curl_virus": ["chilli_curl_virus", "curl virus", "curl_virus", "leaf curl"],
+    "chilli_cercospora_leaf_spot": ["chilli_cercospora", "chilli_cercospora_leaf_spot", "cercospora", "cercospora leaf spot"],
+    "chilli_nutrient_deficiency": ["chilli_nutrient_deficiency", "nutrition deficiency", "nutrient deficiency"],
+    "chilli_white_spot": ["chilli_white_spot", "white spot", "whitespot"],
+    "chilli_healthy": ["chilli_healthy", "healthy_chilli", "chilli healthy"],
+    # --- maize / corn (PlantVillage + Tanzania maize set, Zenodo 15685236) ---
+    "maize_common_rust": ["maize___common_rust", "corn___common_rust", "corn_common_rust", "common rust"],
+    "maize_gray_leaf_spot": ["maize___gray_leaf_spot", "corn___gray_leaf_spot", "gray leaf spot", "cercospora_zeae_maydis"],
+    "maize_northern_leaf_blight": ["maize___northern_leaf_blight", "corn___northern_leaf_blight", "northern leaf blight"],
+    "maize_lethal_necrosis": ["maize_lethal_necrosis", "maize lethal necrosis", "mln"],
+    "maize_streak_virus": ["maize_streak_virus", "maize streak", "msv"],
+    "maize_healthy": ["maize___healthy", "corn___healthy", "maize_healthy", "corn_healthy"],
+    # --- grape (PlantVillage + NGLD set, Mendeley 8nnd2ypcv3) ---
+    "grape_black_rot": ["grape___black_rot", "grape_black_rot", "black rot"],
+    "grape_esca": ["grape___esca_black_measles", "grape_esca", "esca", "black measles"],
+    "grape_leaf_blight": ["grape___leaf_blight_isariopsis_leaf_spot", "grape_leaf_blight", "isariopsis leaf spot"],
+    "grape_downy_mildew": ["grape_downy_mildew", "downy mildew grape", "plasmopara viticola"],
+    "grape_powdery_mildew": ["grape_powdery_mildew", "powdery mildew grape", "uncinula necator"],
+    "grape_bacterial_leaf_spot": ["grape_bacterial_leaf_spot", "bacterial leaf spot grape"],
+    "grape_healthy": ["grape___healthy", "grape_healthy"],
+    # --- cauliflower (BD Cauliflower Leaf Disease, Mendeley x995snz7p3) ---
+    "cauliflower_black_rot": ["cauliflower_black_rot", "black rot cauliflower"],
+    "cauliflower_insect_holes": ["cauliflower_insect_holes", "insect holes", "insect_holes"],
+    "cauliflower_healthy": ["cauliflower_healthy", "healthy cauliflower", "cauliflower healthy"],
+    # --- cucumber (Cucumber Disease Recognition, Mendeley y6d3z6f8z9) ---
+    "cucumber_anthracnose": ["cucumber_anthracnose", "anthracnose"],
+    "cucumber_bacterial_wilt": ["cucumber_bacterial_wilt", "bacterial wilt"],
+    "cucumber_belly_rot": ["cucumber_belly_rot", "belly rot"],
+    "cucumber_downy_mildew": ["cucumber_downy_mildew", "downy mildew cucumber"],
+    "cucumber_pythium_fruit_rot": ["cucumber_pythium_fruit_rot", "pythium fruit rot"],
+    "cucumber_gummy_stem_blight": ["cucumber_gummy_stem_blight", "gummy stem blight"],
+    "cucumber_healthy": ["cucumber_healthy", "fresh leaves cucumber", "cucumber healthy"],
+    # --- papaya (BDPapayaLeaf, Mendeley p997fvf526; Ashulia Dhaka field photos) ---
+    "papaya_anthracnose": ["papaya_anthracnose", "anthracnose papaya"],
+    "papaya_bacterial_spot": ["papaya_bacterial_spot", "bacterial spot papaya"],
+    "papaya_curl": ["papaya_curl", "curl papaya", "papaya leaf curl"],
+    "papaya_ring_spot": ["papaya_ring_spot", "ring spot papaya", "papaya ringspot"],
+    "papaya_healthy": ["papaya_healthy", "healthy papaya", "papaya healthy"],
+    # --- mango (MangoLeafBD, Mendeley hxsnvwty3r; BD orchard photos) ---
+    "mango_anthracnose": ["mango_anthracnose", "anthracnose mango"],
+    "mango_bacterial_canker": ["mango_bacterial_canker", "bacterial canker"],
+    "mango_cutting_weevil": ["mango_cutting_weevil", "cutting weevil"],
+    "mango_die_back": ["mango_die_back", "die back", "dieback"],
+    "mango_gall_midge": ["mango_gall_midge", "gall midge"],
+    "mango_powdery_mildew": ["mango_powdery_mildew", "powdery mildew mango"],
+    "mango_sooty_mould": ["mango_sooty_mould", "sooty mould", "sooty mold"],
+    "mango_healthy": ["mango_healthy", "healthy mango", "mango healthy"],
+    # --- okra (Okra DiseaseNet, Mendeley nh7zk4hv8z; Tamil Nadu field photos) ---
+    "okra_alternaria_leaf_spot": ["okra_alternaria_leaf_spot", "alternaria leaf spot okra"],
+    "okra_cercospora_leaf_spot": ["okra_cercospora_leaf_spot", "cercospora leaf spot okra"],
+    "okra_downy_mildew": ["okra_downy_mildew", "downy mildew okra"],
+    "okra_leaf_curl_virus": ["okra_leaf_curl_virus", "leaf curl okra", "yellow vein mosaic"],
+    "okra_phyllosticta_leaf_spot": ["okra_phyllosticta_leaf_spot", "phyllosticta leaf spot okra"],
+    "okra_healthy": ["okra_healthy", "healthy okra", "okra healthy"],
 }
 
 # When the same canonical class appears in more than one raw dataset,
 # datasets earlier in this list win (more lab-clean data first). Names are
 # matched against the FIRST path component under raw_dir, e.g.
 # "plantvillage dataset" counts as "plantvillage".
-PRIORITY_SOURCES = ["plantvillage", "rice_leaf", "riceleafs", "riceleafs_diseases", "plantdoc"]
+PRIORITY_SOURCES = [
+    "plantvillage", "rice_leaf", "riceleafs", "riceleafs_diseases", "plantdoc",
+    # v2 crops: lab-style mirrors come first, BD/India field collections after —
+    # a field collection wins only when no lab source has that class.
+    "corn", "maize", "grape", "chilli", "cauliflower", "cucumber",
+    "papaya", "mango", "okra", "olid", "brinjal", "eggplant",
+]
 
 
 def _normalize(name: str) -> str:
@@ -213,7 +276,7 @@ def collect_images(raw_dir: Path, merge_all: bool = False) -> dict[str, list[Pat
 
     if skipped:
         unique_skipped = sorted(set(skipped))
-        print(f"[prepare_data] skipped {len(unique_skipped)} unknown class folders (not part of our 13 classes):")
+        print(f"[prepare_data] skipped {len(unique_skipped)} unknown class folders (not part of the canonical class list):")
         for name in unique_skipped:
             print(f"    - {name}")
     return grouped

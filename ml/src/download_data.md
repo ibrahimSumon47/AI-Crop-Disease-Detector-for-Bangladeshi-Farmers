@@ -131,3 +131,60 @@ was trained on ~24,400 lab images; adding data helps most in this order:
 4. Field-photo tip: aim for roughly balanced classes; 50-100 real photos per
    class already helps. Photograph the same diseased leaf from 2-3 angles and
    distances; keep the leaf filling most of the frame.
+
+---
+
+## 7. NEW CROPS (v2 expansion): chilli, maize, grape, cauliflower,
+   cucumber, papaya, mango, okra
+
+The canonical class list in `ml/src/classes.py` now covers 11 crops.
+The 8 new crops need dataset downloads BEFORE training — all free:
+
+| Crop | #Classes | Best free dataset | Where | Photo style |
+|---|---|---|---|---|
+| Chilli (মরিচ) | 6 | **Chili Plant Leaf Disease and Growth Stage — Bangladesh** (1,856 originals) | [Mendeley w9mr3vf56s](https://data.mendeley.com/datasets/w9mr3vf56s/1) | **BD field (Jamalpur)** |
+| Maize (ভুট্টা) | 4–6 | PlantVillage (4 classes) or Tanzania maize (243,539 imgs) | Kaggle mirror / [Zenodo 15685236](https://zenodo.org/records/15685236) | PV lab / Tanzania field |
+| Grape (আঙুর) | 4–7 | PlantVillage (4 classes) + **NGLD** (2,726 field photos) | Kaggle mirror / [Mendeley 8nnd2ypcv3](https://data.mendeley.com/datasets/8nnd2ypcv3/5) | PV lab + India field |
+| Cauliflower (ফুলকপি) | 3 | **BD Cauliflower Leaf Disease** (2,661 imgs) | [Mendeley x995snz7p3](https://data.mendeley.com/datasets/x995snz7p3/1) | **BD field (Savar, Manikganj)** |
+| Cucumber (শসা) | 8 | **Cucumber Disease Recognition** (1,280 originals) | [Mendeley y6d3z6f8z9](https://data.mendeley.com/datasets/y6d3z6f8z9/1) | Field |
+| Papaya (পেঁপে) | 5 | **BDPapayaLeaf** (2,159 imgs) | [Mendeley p997fvf526](https://data.mendeley.com/datasets/p997fvf526/2) | **BD field (Ashulia, Dhaka)** |
+| Mango (আম) | 8 | **MangoLeafBD** (4,000 imgs; ~1,800 distinct) | [Mendeley hxsnvwty3r](https://data.mendeley.com/datasets/hxsnvwty3r/1) | **BD orchard (mobile phone)** |
+| Okra (ঢেঁড়স) | 6 | **Okra DiseaseNet** (1,500 imgs) | [Mendeley nh7zk4hv8z](https://data.mendeley.com/datasets/nh7zk4hv8z/1) | India field (Tamil Nadu) |
+
+### ⚠️ License check before download / publication
+
+- **PlantDoc, BDPapayaLeaf**: CC BY — safest to/redistribute.
+- **Chilli and cauliflower BD datasets**: **CC BY-NC** — non-commercial use only.
+  Fine for an academic-assignment, portfolio/demo, or student project.
+  Do NOT build a commercial product on them without explicit written permission.
+- Other datasets: check each Mendeley/Zenodo record's own terms before publishing.
+
+### How to add (per crop)
+
+1. Download the dataset; unzip into `ml/data/raw/<source>/` — the source
+   folder name can be anything not already used (e.g. `ml/data/raw/chilli_bd/`),
+   as long as the CLASS sub-folders match the aliases in `prepare_data.py`.
+2. Run `python ml/src/prepare_data.py --merge-sources` and READ THE OUTPUT:
+   any "`<<< NO IMAGES`" line for the new classes means the alias map needs a
+   fix, or the folder was named differently than expected.
+3. Retrain on Kaggle/Colab; the new class count is auto-detected by
+   `train.py` (nothing to edit — it reads the dataset's real folder list).
+4. `evaluate.py` → `calibrate_threshold.py` → `export_onnx.py` (the notebook
+   `train_kaggle.ipynb` runs all of these in the right order).
+5. Copy the new `model.onnx` + `labels.json` to `backend/app/data/`, and the
+   intersecting/advice text for each new class to `guidelines_bn.json` —
+   until the guideline text is written the app honestly says "no advice yet"
+   for that class.
+
+### The order I recommend for teaching real-world impact
+
+Chilli + maize first (most requested by farmers + 1 new lab source only),
+then papaya + cauliflower + mango (all three BD field datasets, strongest
+regional match), then grape, cucumber, okra last.
+
+### Eggplant (বেগুন) — NOT added yet
+
+`BrinjalFruitX` is a FRUIT dataset (not leaf) and OLID I's class names need
+verification before use. Both are free on Mendeley/Zenodo; revisit when a
+leaf-level eggplant dataset is confirmed. This is the one crop still pending
+research before it can become part of the canonical class list.
