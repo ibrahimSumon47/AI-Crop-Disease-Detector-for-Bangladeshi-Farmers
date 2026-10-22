@@ -108,7 +108,7 @@ Written in plain language for everyone (farmers, reviewers, developers):
    (19 hand-crafted color/texture features, gradient-boosted trees, exported to ONNX)
    trained on real leaves from all 61 classes plus synthetic photo-junk negatives;
    see [ml/reports/plant_classifier_metrics.json](ml/reports/plant_classifier_metrics.json).
-   On the held-out serving-side evaluation it passes 99.2% of real leaves and
+   On the full test split (end-to-end) it passes 98.6% of real leaves and
    catches most junk; **it is not a real-photo leaf detector**: complex real
    non-plant scenes (people, documents, landscapes) were never in the negative set
    and rely on the low-confidence path below. Extremely dark/blurry photos of
@@ -121,8 +121,9 @@ Written in plain language for everyone (farmers, reviewers, developers):
    saved from Google (compressed, random framing). The marginal classes listed below
    take the biggest hit. The app's calibrated confidence threshold (see below) is the
    safety valve.
-3. **Confident ≠ always right.** Above 0.97 confidence the measured "confident path"
-   precision is ~94% — good, but 1 in ~14 confident answers can still be wrong. When in
+3. **Confident ≠ always right.** Above the stricter 0.97 reference threshold the measured
+   precision is ~94% — good, but 1 in ~14 such answers can still be wrong. The deployed 0.30
+   threshold answers more often, at lower precision (~53% on validation). When in
    doubt, take a second photo from another angle and re-scan.
 4. **One leaf at a time.** The photo should be a single suspected leaf filling most of the
    frame, in daylight. Whole-plant shots, shadows, soil, or blurring hurt accuracy badly.
@@ -186,7 +187,7 @@ download public datasets (11 sources, links below)
 | --- | --- |
 | Top-1 accuracy (61 classes) | **42.80%** |
 | Macro F1 | 0.299 |
-| Confidence threshold (calibrated on validation) | 0.97 → "confident path" precision ≈ **94%** |
+| Deployed confidence threshold (calibrated on validation) | **0.30** (answers ~68% of validation images at ~53% precision). Stricter reference 0.97 → precision ≈ **94%**, but covers only ~4% |
 | Behavior below the threshold | `is_uncertain: true` → honest fallback screen, no fake diagnosis |
 
 Strong classes: maize_common_rust (F1 0.76), maize_streak_virus (0.67), chilli_curl_virus
@@ -229,7 +230,7 @@ model are in the repo. Training was run on **free Colab/Kaggle T4 GPUs**.
   splitting, class-weighted loss, per-class evaluation, confidence-threshold calibration,
   ONNX export with numerical parity verification
 - **Backend:** Python, FastAPI, pydantic-settings, SQLAlchemy + SQLite, Pillow image
-  validation, ONNX Runtime, pytest (23 tests, all run against the real model — no mocks
+  validation, ONNX Runtime, pytest (33 tests, all run against the real model — no mocks
   for inference)
 - **Frontend:** Next.js (App Router, TypeScript), Tailwind CSS, PWA manifest, fetch-based
   API client with Bangla error messages
@@ -260,7 +261,7 @@ photo upload → validate (size/type/size-in-px) → plant-leaf sanity gate
    (flat refusal / trained ONNX plant-vs-non-plant classifier / heuristic fallback)
    + photo-quality warnings (blur/dark) attached to the response
 → preprocess (224×224, [-1,+1], EXIF-safe)
-→ ONNX inference (softmax) → calibrated threshold (0.97)
+→ ONNX inference (softmax) → calibrated threshold (0.30)
    ├─ confident → guideline lookup → diagnosis + Bangla advice
    └─ low confidence → best-guess advice labeled low-confidence
                        + "consult the agriculture officer" → is_uncertain=true
@@ -322,14 +323,14 @@ npm install
 npm run dev
 # .env.local: NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 
-# 3) Tests (23 tests, exercised against the real shipped model)
+# 3) Tests (33 tests, exercised against the real shipped model)
 cd backend
 python -m pytest tests -v
 ```
 
 Configuration lives in [backend/app/config.py](backend/app/config.py) and
 [.env.example](.env.example) (copy it to `backend/.env` to override): `DATABASE_URL`,
-`CONFIDENCE_THRESHOLD` (default: the calibrated 0.97), `ALLOWED_ORIGINS`,
+`CONFIDENCE_THRESHOLD` (default: the deployed 0.30), `ALLOWED_ORIGINS`,
 `MAX_UPLOAD_MB`-style upload limits, and an optional `LLM_API_KEY` for the grounded
 advice-rewrite layer (leave empty to serve the static guideline JSON — recommended).
 
@@ -394,7 +395,7 @@ deployment.
 
 - [x] **Phase 1** — Repository setup
 - [x] **Phase 2** — Data + ML (61-class v2 model trained on free GPUs; ONNX export with parity check)
-- [x] **Phase 3** — Backend (FastAPI, inference, calibrated threshold, Bangla guidelines, 23 tests)
+- [x] **Phase 3** — Backend (FastAPI, inference, calibrated threshold, Bangla guidelines, 33 tests)
 - [x] **Phase 4** — Frontend (Next.js, Bangla-first UI, upload/result/uncertain, history, chatbot)
 - [x] **Phase 5** — Deployment (live on Vercel; PWA installable)
 - [ ] **Next: accuracy v3** — collect 50–100 real field photos per class, retrain with
