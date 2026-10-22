@@ -39,8 +39,11 @@ class Settings(BaseSettings):
     labels_path: str = str((BASE_DIR / "app" / "data" / "labels.json").as_posix())
 
     # Below this softmax confidence the API answers "not sure" instead of
-    # guessing. Calibrated on the validation split (ml/reports/threshold.json).
-    confidence_threshold: float = 0.97
+    # guessing. Calibrated on the validation split (ml/reports/threshold.json):
+    # 0.30 covers ~68% of val images at ~53% precision (the sweep's 0.97
+    # covers only 4%). Vercel runs without env vars, so this default must
+    # match the intended deployment value.
+    confidence_threshold: float = 0.30
 
     # --- Upload limits -------------------------------------------------------
     max_upload_mb: int = 5          # reject images larger than this
