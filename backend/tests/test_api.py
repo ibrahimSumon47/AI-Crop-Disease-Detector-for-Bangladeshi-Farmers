@@ -64,6 +64,47 @@ def test_predict_rejects_empty_file(client):
     assert resp.status_code == 422
 
 
+def test_predict_rejects_flat_color_image(client):
+    """One-solid-color 'photo of nothing' must not get any diagnosis."""
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (320, 320), (60, 130, 60)).save(buf, format="PNG")
+    resp = client.post(
+        "/predict",
+        files={"file": ("flat.png", buf.getvalue(), "image/png")},
+    )
+    assert resp.status_code == 422
+    assert "ফাঁকা" in resp.json()["detail"]
+
+
+def test_predict_rejects_non_leaf_object_on_plain_background(client):
+    """A tuber/product-style object on a plain white background must be
+    rejected with leaf guidance — not a misleading 2% diagnosis.
+    """
+    import io
+
+    from PIL import Image, ImageDraw
+
+    img = Image.new("RGB", (400, 400), (250, 250, 250))
+    draw = ImageDraw.Draw(img)
+    # A tan/brown blob (like the sprouted potato) + a few green shoots.
+    draw.ellipse((130, 130, 280, 280), fill=(176, 138, 90))
+    draw.ellipse((150, 150, 260, 260), fill=(160, 120, 80))
+    for x, y in ((160, 140), (250, 150), (200, 270)):
+        draw.ellipse((x, y, x + 14, y + 20), fill=(90, 120, 60))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    resp = client.post(
+        "/predict",
+        files={"file": ("tuber.png", buf.getvalue(), "image/png")},
+    )
+    assert resp.status_code == 422
+    assert "পাতা" in resp.json()["detail"]
+
+
 def test_history_lists_saved_scans(client):
     """A successful predict must be visible in history afterwards."""
     client.post("/predict", files={"file": ("leaf.png", make_png(), "image/png")})

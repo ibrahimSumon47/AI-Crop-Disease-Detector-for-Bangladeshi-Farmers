@@ -133,3 +133,8 @@ desktop.ini
 # Backend runtime artifacts
 backend/*.db
 *.sqlite3
+
+# local dev server logs/pids
+backend/_uvicorn.log
+backend/_uvicorn.pid
+frontend/_next.log

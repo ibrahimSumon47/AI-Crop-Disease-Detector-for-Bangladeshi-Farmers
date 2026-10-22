@@ -32,6 +32,7 @@ pesticide recommendation can destroy a farmer's season.
 | Feature | Description |
 | --- | --- |
 | 📷 **Scan a leaf** | Capture with the phone camera (`capture="environment"`) or pick a file |
+| 🚫 **Non-leaf guard** | Tuber/product-style photos and flat/blank images are refused with clear Bangla guidance instead of a fake low-% diagnosis |
 | 🧠 **AI diagnosis** | Crop + condition prediction across **61 trained classes on 11 crops** |
 | 📊 **Confidence + top-3** | Confidence % and three alternatives, so the farmer sees the whole picture |
 | 🟡 **Honest uncertainty** | Below the calibrated confidence threshold the app refuses to guess: it shows the best guess's advice labeled low-confidence + "consult an agriculture officer" |
@@ -94,17 +95,25 @@ Adding a new crop is a documented data → train → export pipeline — see
 [ml/src/download_data.md](ml/src/download_data.md) (it already contains dataset
 candidates for eggplant and others).
 
----
-
-## ⚠️ Limitations — read before trusting a diagnosis
+---## ⚠️ Limitations — read before trusting a diagnosis
 
 Written in plain language for everyone (farmers, reviewers, developers):
 
-1. **It is a helper, not an expert.** This app never replaces an agriculture officer or a
-   plant-pathology expert; every result screen repeats that message.
+0. **Photos of anything other than a plant leaf are rejected, not diagnosed.**
+   The app runs a pre-inference sanity gate: a photo that is not a leaf — e.g. a
+   sprouted potato/tuber/fruit on a plain product-style background, or an empty/flat
+   color image — gets a clear Bangla message ("ছবিতে গাছের পাতা ধরা পড়েনি…") instead of
+   a misleading low-percentage "diagnosis". The gate is a color/texture heuristic
+   calibrated against the real test split; it cannot catch every non-leaf photo
+   (people, documents, distant blurry leaves pass through and rely on the
+   low-confidence path below).
+1. **It helps, it does not replace an expert.** This app never replaces an agriculture
+   officer or a plant-pathology expert; every result screen repeats that message.
 2. **Test accuracy is ~43% per class (61-way task), and that is on clean lab photos.**
-   Real phone/field photos are harder, so expect more mistakes than the number suggests.
-   The app's calibrated confidence threshold (see below) is the safety valve.
+   Real phone/field photos are harder — low light, motion blur, cheap cameras, images
+   saved from Google (compressed, random framing). The marginal classes listed below
+   take the biggest hit. The app's calibrated confidence threshold (see below) is the
+   safety valve.
 3. **Confident ≠ always right.** Above 0.97 confidence the measured "confident path"
    precision is ~94% — good, but 1 in ~14 confident answers can still be wrong. When in
    doubt, take a second photo from another angle and re-scan.
@@ -240,7 +249,8 @@ model are in the repo. Training was run on **free Colab/Kaggle T4 GPUs**.
 ## 🧭 How it works (request flow)
 
 ```
-photo upload → validate & preprocess (224×224, [-1,+1], EXIF-safe)
+photo upload → validate (size/type/size-in-px) → plant-leaf sanity gate
+→ preprocess (224×224, [-1,+1], EXIF-safe)
 → ONNX inference (softmax) → calibrated threshold (0.97)
    ├─ confident → guideline lookup → diagnosis + Bangla advice
    └─ low confidence → best-guess advice labeled low-confidence

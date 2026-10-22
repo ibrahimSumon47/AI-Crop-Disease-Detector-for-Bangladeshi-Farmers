@@ -28,11 +28,27 @@ def client() -> Iterator[TestClient]:
 
 
 def make_png(width: int = 320, height: int = 320, color: tuple = (60, 130, 60)) -> bytes:
-    """Build a synthetic leaf-looking PNG in memory (no file IO needed)."""
-    import io
+    """Build a synthetic leaf-looking PNG in memory (no file IO needed).
 
+    Texture is added on purpose: the plant_guard sanity gate (correctly)
+    refuses one-solid-color "photo of nothing" uploads, and the positive
+    tests should resemble a real photo, which always carries detail.
+    """
+    import io
+    import random
+
+    import numpy as np
     from PIL import Image
-    img = Image.new("RGB", (width, height), color)
+
+    # Mild horizontal gradient + noise: enough detail for the flat-photo
+    # guard to pass, and closer to a real photo than a flat fill.
+    xs = np.arange(width, dtype=np.int16)
+    shading = ((87 - 0.25 * xs) // 12)[None, :]
+    arr = np.full((height, width, 3), color, dtype=np.int16)
+    arr[..., 1] = np.clip(arr[..., 1] + shading, 0, 255)
+    noise = np.random.default_rng(7).integers(-18, 19, size=arr.shape)
+    arr = np.clip(arr + noise, 0, 255).astype(np.uint8)
+    img = Image.fromarray(arr, mode="RGB")
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return buf.getvalue()

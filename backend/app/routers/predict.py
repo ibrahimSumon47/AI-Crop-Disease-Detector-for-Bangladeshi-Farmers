@@ -23,7 +23,7 @@ from ..db import get_db
 from ..models import Scan
 from ..schemas import Advice, PredictionItem, PredictionResponse
 from ..services import guidelines as gl
-from ..services import inference, processing
+from ..services import inference, plant_guard, processing
 from ..services.preprocess import ImageValidationError, preprocess, validate_image
 
 logger = logging.getLogger(__name__)
@@ -40,9 +40,17 @@ async def predict_leaf(
 
     try:
         img = validate_image(data)
-        batch = preprocess(img)
     except ImageValidationError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+
+    # Sanity gate BEFORE inference: a photo with no plant material (a tuber
+    # on a plain background, a flat/blank image) must be refused with
+    # guidance instead of a misleading 2% "diagnosis".
+    leaf_ok, leaf_reason = plant_guard.looks_like_leaf(img)
+    if not leaf_ok:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, leaf_reason)
+
+    batch = preprocess(img)
 
     top3 = inference.predict_top3(batch)
     family_note = processing.attach_family_note(top3)
