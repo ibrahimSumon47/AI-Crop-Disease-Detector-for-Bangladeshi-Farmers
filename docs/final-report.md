@@ -268,3 +268,21 @@ commercial use.
   real Bangladeshi field dataset over time.
 - Move scan history to a persistent database, since the current `/tmp` store
   resets on redeploy.
+
+## 11. User Interface
+
+Screenshots of the deployed app
+(ai-crop-disease-detector-for-bangla-three.vercel.app), taken in a browser at
+phone-friendly width.
+
+![Home screen](screenshots/upload_screen.png)
+
+*Figure 1 — Home screen: the farmer takes or selects a leaf photo, then presses
+"রোগ নির্ণয় করুন" (diagnose).*
+
+![Uncertain result screen](screenshots/result_uncertain.png)
+
+*Figure 2 — Honest uncertainty: below the confidence threshold the app shows
+"নিশ্চিত বলা যাচ্ছে না" (cannot confirm), still offers the most probable
+condition's Bangla advice labelled low-confidence, and asks the farmer to
+consult an agriculture officer.*
